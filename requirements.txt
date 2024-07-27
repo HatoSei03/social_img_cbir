@@ -1,0 +1,6 @@
+numpy==1.26.4
+opencv-python==4.10.0.82
+streamlit==1.35.0
+tensorflow==2.15.0
+keras==2.15.0
+annoy==1.17.3
