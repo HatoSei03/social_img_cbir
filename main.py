@@ -3,41 +3,58 @@ import csv
 import os
 import streamlit as st
 import cv2 as cv
-import random
-from tensorflow import random as tfrand
 import time
+from dotenv import load_dotenv
 
 from processing import set_random_seed, define_model, create_annoy_index, AnnoyIndex, preprocess_query_image, search_image
-    
+from get_data import download_database, unzip_file
+
 # Đặt hạt giống
 set_random_seed(50)
 
 # Create a feature extractor model
 feature_extractor = define_model()
 
-folder =  f"D:/HCMUS/HK9/VIR"
-names_path = f"{folder}/features.csv"
-feature_path = f"{folder}/features.npy"
-index_path = f"{folder}/index.ann"
+load_dotenv() 
 
-with st.spinner("Loading data..."):
-    # Load image names from CSV file
-    image_names = []
-    with open(names_path, 'r') as f:
-        reader = csv.reader(f)
-        for row in reader:
-            image_names.append(row[0])
+with st.spinner("Getting data..."):
+    try:
+        if not os.path.exists('Flickr'):
+            with st.spinner("Downloading and unzip dataset..."):
+                download_database(os.getenv("Dataset"), "Flickr.zip")
+                unzip_file("Flickr.zip")
+            
+            with st.spinner("Downloading features..."):
+                download_database(os.getenv("Index"), "database/index.ann")
+                download_database(os.getenv("CSV"), "database/features.csv")
+                download_database(os.getenv("Features"), "database/features.npy")
+                
+            st.success("Finish getting data!")
+    except Exception as e:
+        st.error('Failed to get database!')
+        print(f'Error when getting database, ${e}')
+        
+    try:
+        # Load image names from CSV file
+        image_names = []
+        with open("database/features.csv", 'r') as f:
+            reader = csv.reader(f)
+            for row in reader:
+                image_names.append(row[0])
 
-    # Load precomputed features
-    features = np.load(feature_path)
+        # Load precomputed features
+        features = np.load("database/features.npy")
 
-    # Create and load Annoy index
-    if not os.path.exists(index_path):
-        index = create_annoy_index(features)
-        index.save(index_path)
+        # Create and load Annoy index
+        if not os.path.exists("database/index.ann"):
+            index = create_annoy_index(features)
+            index.save("database/index.ann")
 
-    index = AnnoyIndex(features.shape[1], 'euclidean')
-    index.load(index_path)
+        index = AnnoyIndex(features.shape[1], 'euclidean')
+        index.load("database/index.ann")
+    except Exception as e:
+        st.error('Failed to load features and index')
+        print(f'Error when loading features and index, ${e}')
 
 st.title("Social Image Retrieval System")
 uploaded_file = st.sidebar.file_uploader("Choose an image...", type=["jpg", "png", "jpeg"])
@@ -67,7 +84,7 @@ if uploaded_file is not None:
             
             # Display similar images
             for image_name in similar_images:
-                image_path = f'{folder}/Dataset/Flickr/flickr30k_images/flickr30k_images/{image_name}'
+                image_path = f'Flickr/flickr30k_images/flickr30k_images/{image_name}'
                 similar_img = cv.imread(image_path)
                 st.image(similar_img, channels="BGR", caption=image_name, use_column_width=True)
     
