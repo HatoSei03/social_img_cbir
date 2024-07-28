@@ -19,12 +19,12 @@ The MIRFLICKR25000 dataset is a collection of 25,000 images sourced from the pho
 
 3. Create a .env file with the following content:
 
-   ```
-    Dataset= "https://drive.google.com/uc?id=1_YB9Z3B_MArC-hQeOYyly_H2XMXDhkLg"
-    Index= "https://drive.google.com/uc?id=173ZcmMKIc6vWBjatUpZQSsVLfo-7Rxkb"
-    CSV= "https://drive.google.com/uc?id=1UfxgXes8GX4kU4osZAYxkpULPVquX-5O"
-    Features= "https://drive.google.com/uc?id=1pr1Xs7Ul2m5aryA-C7eF2ZFTKsRkK69F"
-   ```
+	```
+	Dataset= "https://drive.google.com/uc?export=download&id=1lYc4Hg80T-XKBHOn4Cge5DHKrJO2avvy"
+	Index= "https://drive.google.com/uc?export=download&id=1vQ8eQNxTJVmkZXUiobqCbIjtl93xRH4Q"
+	CSV= "https://drive.google.com/uc?export=download&id=1l5_X9pYsgEJWMRSiXLoFmepY7sbUuzKq"
+	Features= "https://drive.google.com/uc?export=download&id=1BKTV-JNwIN7PwFIijTh8C4Fu5xPyJt3R"
+	```
 
 4. Install the Python dependencies as in [requirements.txt](requirements.txt) file by running the code
     ```bash
