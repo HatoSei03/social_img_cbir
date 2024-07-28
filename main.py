@@ -9,6 +9,8 @@ from dotenv import load_dotenv
 from processing import set_random_seed, define_model, create_annoy_index, AnnoyIndex, preprocess_query_image, search_image
 from get_data import download_database, unzip_file
 
+img_folder = "Flickr/mirflickr"
+
 # Đặt hạt giống
 set_random_seed(50)
 
@@ -84,7 +86,7 @@ if uploaded_file is not None:
             
             # Display similar images
             for image_name in similar_images:
-                image_path = f'Flickr/flickr30k_images/flickr30k_images/{image_name}'
+                image_path = f'{img_folder}/{image_name}'
                 similar_img = cv.imread(image_path)
                 st.image(similar_img, channels="BGR", caption=image_name, use_column_width=True)
     
