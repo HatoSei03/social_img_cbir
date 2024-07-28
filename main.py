@@ -60,9 +60,10 @@ with st.spinner("Getting data..."):
 
 st.title("Social Image Retrieval System")
 uploaded_file = st.sidebar.file_uploader("Choose an image...", type=["jpg", "png", "jpeg"])
-btn_searching = st.sidebar.button("Search")
 
 if uploaded_file is not None:
+    top_k = st.sidebar.number_input("Number of top K results", min_value=1, max_value=100, value=5)
+    btn_searching = st.sidebar.button("Search")
     file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
     img = cv.imdecode(file_bytes, 1)
     
@@ -76,17 +77,18 @@ if uploaded_file is not None:
             
         with st.spinner("Searching..."):
             start = time.time()
-            similar_images = search_image(query_feature[0], index, image_names, top_k=5)
+            similar_images = search_image(query_feature[0], index, image_names, top_k=top_k)
             end = time.time()
             run_time = end - start
             
-            st.sidebar.write(f'Runtime: {run_time:.2f} secs')
-            
-            st.write("Similar images:")
+            st.write(f'Runtime: {run_time:.2f} secs. Similar images:')
             
             # Display similar images
+            index = 1
             for image_name in similar_images:
-                image_path = f'{img_folder}/{image_name}'
+                image_path =  f'{img_folder}/{image_name}'
                 similar_img = cv.imread(image_path)
-                st.image(similar_img, channels="BGR", caption=image_name, use_column_width=True)
+                caption = f'Image {index}: {image_name}'
+                st.image(similar_img, channels="BGR", caption=caption, use_column_width=True)
+                index+=1
     
