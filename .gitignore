@@ -1,4 +1,8 @@
 
-/Flickr
 /__pycache__
 /database
+**/*.jpg
+**/*.jpeg
+**/*.png
+**/*.txt
+.env
