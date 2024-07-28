@@ -8,11 +8,8 @@ from annoy import AnnoyIndex
 from tensorflow import random as tfrand
 from keras.applications import InceptionResNetV2
 from keras.layers import Dense, Dropout, GlobalAveragePooling2D
-from keras.models import Model, load_model
+from keras.models import Model
 from keras.applications.inception_resnet_v2 import preprocess_input
-
-MODEL_PATH = 'extractor.keras'
-
 
 def set_random_seed(seed_value=42):
     np.random.seed(seed_value)
@@ -21,9 +18,6 @@ def set_random_seed(seed_value=42):
 
 
 def define_model():
-    if osys.path.exists(MODEL_PATH):
-        model = load_model(MODEL_PATH)
-        return model
 
     # Load the InceptionResNetV2 model without the top classification layer
     base_model = InceptionResNetV2(
@@ -39,9 +33,6 @@ def define_model():
     x = Dense(1024, activation='relu')(x)
     x = Dropout(0.5)(x)
     model = Model(inputs=base_model.input, outputs=x)
-
-    # Save the model
-    model.save(MODEL_PATH)
     return model
 
 

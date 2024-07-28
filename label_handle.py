@@ -10,7 +10,7 @@ def read_upload(file):
 
 def load_label_from_path(path):
 	lines = []
-	with open(path, 'r') as f:
+	with open(path, 'r', encoding="utf-8") as f:
 		# Read each line in the text file
 		for line in f:
 			# Strip any leading/trailing whitespace
