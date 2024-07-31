@@ -95,16 +95,16 @@ def display_similar_images(similar_images, query_labels, img_folder, label_folde
 
         similar_img = cv.imread(image_path)
         labels = load_label_from_path(label_path)
-        matching_labels = [
-            label for label in labels if label in query_labels_list]
+        #matching_labels = [
+        #    label for label in labels if label in query_labels_list]
 
-        accuracy_str = f'Image {idx} - '
-        accuracy_str += f'Accuracy {len(matching_labels)}/'
-        accuracy_str += str(len(query_labels_list))
+        #accuracy_str = f'Image {idx} - '
+        #accuracy_str += f'Accuracy {len(matching_labels)}/'
+        #accuracy_str += str(len(query_labels_list))
 
-        st.write(accuracy_str)
+        #st.write(accuracy_str)
         st.write(f'Labels: {", ".join(labels)}')
-        st.write(f'Matching Labels: {", ".join(matching_labels)}')
+        #st.write(f'Matching Labels: {", ".join(matching_labels)}')
 
         caption = f'Image {idx}: {image_name}'
         st.image(similar_img, channels="BGR",
@@ -129,8 +129,8 @@ def main():
     st.title("Social Image Retrieval System")
     uploaded_file = st.sidebar.file_uploader(
         "Choose an image...", type=["jpg", "png", "jpeg"])
-    label_file = st.sidebar.file_uploader(
-        "Choose your label file...", type=["txt"])
+    # label_file = st.sidebar.file_uploader(
+    #    "Choose your label file...", type=["txt"])
     if uploaded_file:
         file_bytes = np.asarray(
             bytearray(uploaded_file.read()), dtype=np.uint8)
@@ -139,19 +139,19 @@ def main():
         img = []
 
     query_labels = "No label"
-    if label_file:
-        query_labels = ", ".join(read_upload(
-            label_file)) if label_file else "No label"
+    #if #label_file:
+        #query_labels = ", ".join(read_upload(
+            #label_file)) if #label_file else "No label"
     top_k = st.sidebar.number_input(
         "Number of top K results", min_value=1, max_value=100, value=5)
-    st.sidebar.write(f'Query labels: {query_labels}')
+    #st.sidebar.write(f'Query labels: {query_labels}')
     print("FINISH load img and label")
-    if uploaded_file and label_file:
+    if uploaded_file: #label_file:
         btn_searching = st.sidebar.button("Search")
     if uploaded_file:
         st.sidebar.image(img, channels="BGR",
                         caption='Uploaded Image.', use_column_width=True)
-    if uploaded_file and label_file:
+    if uploaded_file: #and #label_file:
         if btn_searching and img is not None:
             with st.spinner("Processing image..."):
                 data_thread.join()
