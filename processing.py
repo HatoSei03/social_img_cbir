@@ -6,10 +6,10 @@ import os as osys
 from annoy import AnnoyIndex
 
 from tensorflow import random as tfrand
-from keras.applications import InceptionResNetV2
-from keras.layers import Dense, Dropout, GlobalAveragePooling2D
-from keras.models import Model
-from keras.applications.inception_resnet_v2 import preprocess_input
+from keras._tf_keras.keras.applications import InceptionResNetV2
+from keras._tf_keras.keras.layers import Dense, Dropout, GlobalAveragePooling2D
+from keras._tf_keras.keras.models import Model
+from keras._tf_keras.keras.applications.inception_resnet_v2 import preprocess_input
 
 def set_random_seed(seed_value=42):
     np.random.seed(seed_value)
@@ -25,7 +25,10 @@ def define_model():
 
     # Freeze pre-trained layers
     for layer in base_model.layers:
-        layer.trainable = False
+        try:
+            layer.trainable = False
+        except:
+            pass
 
     # Add new layers for feature extraction
     x = base_model.output
