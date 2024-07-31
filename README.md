@@ -17,7 +17,7 @@ The MIRFLICKR25000 dataset is a collection of 25,000 images sourced from the pho
    cd {{project_directory}}
    ```
 
-3. Create a .env file with the following content:
+3. Create a `.env` file with the following content:
 
 	```
 	Dataset= "https://drive.google.com/uc?export=download&id=1lYc4Hg80T-XKBHOn4Cge5DHKrJO2avvy"
