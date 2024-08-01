@@ -6,3 +6,5 @@
 **/*.png
 **/*.txt
 .env
+
+!/test/*.jpg
