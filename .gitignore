@@ -8,3 +8,4 @@
 .env
 
 !/test/*.jpg
+!/result/*.jpg

@@ -134,7 +134,7 @@ def main():
         img = []
 
     top_k = st.sidebar.number_input(
-        "Number of top K results", min_value=1, max_value=100, value=5)
+        "Number of top K results", min_value=1, max_value=25000, value=5)
 
     if uploaded_file: 
         btn_searching = st.sidebar.button("Search")
@@ -164,6 +164,8 @@ def main():
                 run_time = (end - start)
 
                 st.write(f'Runtime: {run_time:.2f} secs. Similar images:')
+                
+            with st.spinner("Loading image..."):
                 display_similar_images(
                     similar_images, IMG_FOLDER, LABEL_FOLDER)
 
