@@ -9,5 +9,3 @@ def download_database(drive_url: str | None, dst: str)-> None:
 def unzip_file(file_name:str) -> None:
     with ZipFile('Flickr.zip', 'r') as zip_ref:
                 zip_ref.extractall()
-
-             
