@@ -20,6 +20,7 @@ FEATURES_CSV = os.path.join(DATABASE_FOLDER, "features.csv")
 FEATURES_NPY = os.path.join(DATABASE_FOLDER, "features.npy")
 INDEX_FILE = os.path.join(DATABASE_FOLDER, "index.ann")
 
+st.set_page_config(layout="wide")
 
 def setup_environment():
     os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
@@ -95,20 +96,25 @@ def download_and_prepare_data():
     st.success("Finished getting data!")
 
 
-def display_similar_images(similar_images, img_folder, label_folder):
+def display_similar_images(similar_images, img_folder, label_folder, row_size):
+    grid = st.columns(row_size)
     for idx, image_name in enumerate(similar_images, start=1):
-        image_path = os.path.join(img_folder, image_name)
-        label_path = os.path.join(
-            label_folder, f'tags{image_name.replace(".jpg", ".txt").replace("im", "")}')
+        with grid[(idx-1) % row_size]:
+            image_path = os.path.join(img_folder, image_name)
+            label_path = os.path.join(
+                label_folder, f'tags{image_name.replace(".jpg", ".txt").replace("im", "")}')
 
-        similar_img = cv.imread(image_path)
-        labels = load_label_from_path(label_path)
-        
-        st.write(f'Labels {idx}: {", ".join(labels)}')
+            similar_img = cv.imread(image_path)
+            labels = load_label_from_path(label_path)
+            
+            #st.write(f'Labels {idx}: {", ".join(labels)}')
 
-        caption = f'Image {idx}: {image_name}'
-        st.image(similar_img, channels="BGR",
-                 caption=caption, use_column_width=True)
+            caption = f'Image {idx}: {image_name}'
+            st.image(similar_img, channels="BGR",
+                    caption=caption, use_column_width=True)
+            st.caption(", ".join(labels))
+        if idx % row_size == 0:
+            grid = st.columns(row_size)
 
 
 def main():
@@ -123,6 +129,7 @@ def main():
             return
 
     st.title("Social Image Retrieval System")
+    row_size = st.sidebar.select_slider("Row size:", range(1, 10), value=3)
     uploaded_file = st.sidebar.file_uploader(
         "Choose an image...", type=["jpg", "png", "jpeg"])
 
@@ -162,12 +169,12 @@ def main():
                     query_feature[0], index, image_names, top_k=int(top_k))
                 end = time.time()
                 run_time = (end - start)
-
+                st.session_state.similar_images = similar_images
                 st.write(f'Runtime: {run_time:.2f} secs. Similar images:')
-                
-            with st.spinner("Loading image..."):
-                display_similar_images(
-                    similar_images, IMG_FOLDER, LABEL_FOLDER)
+    if "similar_images" in st.session_state:
+        with st.spinner("Loading image..."):
+            display_similar_images(
+                st.session_state.similar_images, IMG_FOLDER, LABEL_FOLDER, row_size)
 
 if __name__ == "__main__":
     main()
