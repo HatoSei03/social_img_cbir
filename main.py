@@ -5,21 +5,23 @@ import numpy as np
 import streamlit as st
 import cv2 as cv
 from dotenv import load_dotenv
+from annotated_text import annotated_text, parameters
 
 from processing import (
     set_random_seed, define_model, create_annoy_index, AnnoyIndex,
     preprocess_query_image, search_image
 )
 from get_data import download_database, unzip_file
-from label_handle import load_label_from_path
+from label_handle import load_annotation
 
 IMG_FOLDER = "mirflickr"
-LABEL_FOLDER = "mirflickr/meta/tags"
 DATABASE_FOLDER = "database"
 FEATURES_CSV = os.path.join(DATABASE_FOLDER, "features.csv")
 FEATURES_NPY = os.path.join(DATABASE_FOLDER, "features.npy")
 INDEX_FILE = os.path.join(DATABASE_FOLDER, "index.ann")
+ANNOTATIONS = os.path.join(DATABASE_FOLDER, "annotation.csv")
 
+parameters.SHOW_LABEL_SEPARATOR = True
 st.set_page_config(layout="wide")
 
 def setup_environment():
@@ -85,34 +87,45 @@ def download_and_prepare_data():
     if not os.path.exists(DATABASE_FOLDER):
         os.mkdir(DATABASE_FOLDER)
 
-    with st.spinner("Downloading features..."):
+    with st.spinner("Downloading features and related file..."):
         if not os.path.exists(INDEX_FILE):
             download_database(os.getenv("Index"), INDEX_FILE)
         if not os.path.exists(FEATURES_CSV):
             download_database(os.getenv("CSV"), FEATURES_CSV)
         if not os.path.exists(FEATURES_NPY):
             download_database(os.getenv("Features"), FEATURES_NPY)
+        if not os.path.exists(ANNOTATIONS):
+            download_database(os.getenv("Annotations"), ANNOTATIONS)
 
     st.success("Finished getting data!")
 
+# get only digits from string
+def get_digits(text):
+    return int(''.join(filter(str.isdigit, text)))
 
-def display_similar_images(similar_images, img_folder, label_folder, row_size):
+def display_similar_images(similar_images, img_folder, row_size):
     grid = st.columns(row_size)
     for idx, image_name in enumerate(similar_images, start=1):
         with grid[(idx-1) % row_size]:
             image_path = os.path.join(img_folder, image_name)
-            label_path = os.path.join(
-                label_folder, f'tags{image_name.replace(".jpg", ".txt").replace("im", "")}')
-
+            img_id = get_digits(image_name)
+            po_annotation, re_annotation = load_annotation(img_id)
             similar_img = cv.imread(image_path)
-            labels = load_label_from_path(label_path)
-            
-            #st.write(f'Labels {idx}: {", ".join(labels)}')
-
             caption = f'Image {idx}: {image_name}'
             st.image(similar_img, channels="BGR",
                     caption=caption, use_column_width=True)
-            st.caption(", ".join(labels))
+            annotated_text(
+                [
+                    f"{len(po_annotation)} potential: ", 
+                    po_annotation,
+                ]
+            )
+            annotated_text(
+                [
+                    f"{len(re_annotation)} relevant: ",
+                    re_annotation
+                ]
+            )
         if idx % row_size == 0:
             grid = st.columns(row_size)
 
@@ -174,7 +187,7 @@ def main():
     if "similar_images" in st.session_state:
         with st.spinner("Loading image..."):
             display_similar_images(
-                st.session_state.similar_images, IMG_FOLDER, LABEL_FOLDER, row_size)
+                st.session_state.similar_images, IMG_FOLDER, row_size)
 
 if __name__ == "__main__":
     main()
