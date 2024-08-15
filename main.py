@@ -121,7 +121,7 @@ def count_correct_in_db(input_label):
 
 
 @st.cache_data(show_spinner=False)
-def calc_rr(img_result, input_label):
+def calc_rr(img_result, input_label, ignore_first=False):
     for idx, img in enumerate(img_result):
         img_id = get_digits(img)
         re = load_plain_annotation(
@@ -132,6 +132,9 @@ def calc_rr(img_result, input_label):
                 is_correct = False
                 break
         if is_correct:
+            if ignore_first:
+                ignore_first = False
+                continue
             return 1/(idx+1)
     return 0
 
@@ -348,19 +351,21 @@ def main():
         search_time = round(st.session_state.run_time, 3)
         precision = round(correct_img/len(data), 3) if len(data) > 0 else 0
         recall = round(correct_img/correct_db, 3) if correct_db > 0 else 0
-        rr = round(calc_rr(data, input_labels), 3) 
+        rr = round(calc_rr(data, input_labels), 3)
+        rr_igf = round(calc_rr(data, input_labels, ignore_first=True), 3)
         apk = round(calc_apk(data, input_labels), 3)
 
         measurements = pd.DataFrame(
             [
-             ["Processing time (secs)",  process_time],
-             ["Searching time (secs)",  search_time],
-             ["Correct images", correct_img],
-             ["Correct images in DB", correct_db],
-             ["Precision", precision],
-             ["Recall", recall],
-             ["RR", rr],
-             ["AP@K", apk]],
+                ["Processing time (secs)",  process_time],
+                ["Searching time (secs)",  search_time],
+                ["Correct images", correct_img],
+                ["Correct images in DB", correct_db],
+                ["Precision", precision],
+                ["Recall", recall],
+                ["RR", rr],
+                ["RR ignoring first", rr_igf],
+                ["AP@K", apk]],
             columns=["Measurements", "Values"]
         )
         measurements.set_index("Measurements", inplace=True)
