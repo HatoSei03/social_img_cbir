@@ -6,6 +6,7 @@ import streamlit as st
 import cv2 as cv
 from dotenv import load_dotenv
 from annotated_text import annotated_text, parameters
+from streamlit_tags import st_tags
 
 from processing import (
     set_random_seed, define_model, create_annoy_index, AnnoyIndex,
@@ -24,6 +25,7 @@ ANNOTATIONS = os.path.join(DATABASE_FOLDER, "annotation.csv")
 
 parameters.SHOW_LABEL_SEPARATOR = True
 st.set_page_config(layout="wide")
+
 
 def setup_environment():
     os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
@@ -47,7 +49,7 @@ def load_data():
 
         index = AnnoyIndex(features.shape[1], 'euclidean')
         index.load(INDEX_FILE)
-        
+
         if image_names is None or features is None or index is None:
             st.error('Failed to load features and index')
     except Exception as e:
@@ -56,17 +58,66 @@ def load_data():
         load_time = time.time() - load_time
         print(f'Load data time: {load_time:.2f} secs')
         return image_names, index
-    
+
 
 @st.cache_data
-def convert_result_to_csv(imgs_name):
-    result = '"rank","index","po_annotation","re_annotation"\n';
+def convert_result_to_csv(imgs_name, input_labels):
+    result = '"rank","index","po_annotation","re_annotation","match_labels"\n'
     for idx, img in enumerate(imgs_name, start=1):
         img_id = get_digits(img)
         po, re = load_plain_annotation(
             img_id, ANNOTATIONS)
-        result += f"{idx},\"{img}\",\"{'; '.join(po)}\",\"{'; '.join(re)}\"\n"
+        match_labels = [label for label in input_labels if label in re]
+        result += f"{idx},\"{img}\",\"{'; '.join(po)}\",\"{'; '.join(re)}\",\"{match_labels}\"\n"
     return result
+
+
+@st.cache_data
+def suggestion_label(imgs_list):
+    result = []
+    for img in imgs_list:
+        img_id = get_digits(img)
+        re = load_plain_annotation(
+            img_id, ANNOTATIONS)[1]
+        for label in re:
+            if label == "":
+                continue
+            if label not in result:
+                result.append(label)
+    return sorted(result)
+
+
+@st.cache_data
+def calc_pos_neg(input_label):
+    positive = 0
+    RE_COL = 3
+    with open(ANNOTATIONS, 'r') as f:
+        reader = csv.reader(f)
+        for row in reader:
+            re_labels = row[RE_COL].split(';')
+            positive += 1
+            for label in input_label:
+                if label not in re_labels:
+                    positive -= 1
+                    break
+    negative = len(open(ANNOTATIONS).readlines()) + 1 - positive
+    return positive, negative
+
+
+@st.cache_data
+def count_correct(img_result, input_label):
+    correct_label_img = 0
+    for img in img_result:
+        img_id = get_digits(img)
+        re = load_plain_annotation(
+            img_id, ANNOTATIONS)[1]
+        correct_label_img += 1
+        for label in input_label:
+            if label not in re:
+                correct_label_img -= 1
+                break
+    return correct_label_img
+
 
 def createModel():
     extractor = None
@@ -78,7 +129,7 @@ def createModel():
     finally:
         load_time = time.time() - load_time
         print(f'Create model time: {load_time:.2f} secs')
-        
+
         return extractor
 
 
@@ -112,10 +163,13 @@ def download_and_prepare_data():
     st.success("Finished getting data!")
 
 # get only digits from string
+
+
 def get_digits(text):
     return int(''.join(filter(str.isdigit, text)))
 
-def display_similar_images(similar_images, img_folder, row_size, max_ppage, page_indx):
+
+def display_similar_images(similar_images, input_label, img_folder, row_size, max_ppage, page_indx):
     grid = st.columns(row_size)
     start_idx = (page_indx - 1) * max_ppage + 1
     end_idx = min(page_indx * max_ppage, len(similar_images))
@@ -130,9 +184,13 @@ def display_similar_images(similar_images, img_folder, row_size, max_ppage, page
             caption = f'Image {idx}: {image_name}'
             st.image(similar_img, channels="BGR",
                     caption=caption, use_column_width=True)
+            
+            re_label = load_plain_annotation(img_id, ANNOTATIONS)[1]
+            match_labels_idx = [idx for idx, label in enumerate(re_label) if label in input_label]
+            match_annotations = [re_annotation[idx] for idx in match_labels_idx]
             annotated_text(
                 [
-                    f"{len(po_annotation)} potential: ", 
+                    f"{len(po_annotation)} potential: ",
                     po_annotation,
                 ]
             )
@@ -142,6 +200,13 @@ def display_similar_images(similar_images, img_folder, row_size, max_ppage, page
                     re_annotation
                 ]
             )
+            annotated_text(
+                [
+                    f"{len(match_annotations)} match: ",
+                    match_annotations
+                ]
+            )
+            
         if (idx-start_idx+1) % row_size == 0:
             grid = st.columns(row_size)
 
@@ -174,22 +239,29 @@ def main():
     top_k = st.sidebar.number_input(
         "Number of top K results", min_value=1, max_value=25000, value=5)
 
-    if uploaded_file: 
+    if uploaded_file:
         btn_searching = st.sidebar.button("Search")
         st.sidebar.image(img, channels="BGR",
-                        caption='Uploaded Image.', use_column_width=True)
-        
+                         caption='Uploaded Image.', use_column_width=True)
+
         if btn_searching and img is not None:
             load_data_and_create_model()
             with st.spinner("Processing image..."):
                 start = time.time()
                 query_img_array = preprocess_query_image(img)
-                image_names, index, feature_extractor = load_data_and_create_model()
                 
-                while feature_extractor is None:
+                image_names, index, feature_extractor = None, None, None
+                try:
+                    image_names, index, feature_extractor = load_data_and_create_model()
+                except:
                     load_data.clear()
                     load_data_and_create_model.clear()
-                    image_names, index, feature_extractor = load_data_and_create_model()
+                    st.error('Failed to load features and index. Please press "Search" again.')
+                
+                if image_names is None or index is None or feature_extractor is None:
+                    load_data.clear()
+                    load_data_and_create_model.clear()
+                    st.error('Failed to load features and index. Please press "Search" again.')
 
                 query_feature = feature_extractor.predict(query_img_array)
                 end = time.time()
@@ -205,29 +277,42 @@ def main():
                 st.session_state.similar_images = similar_images
                 st.session_state.run_time = run_time
     if "similar_images" in st.session_state:
-        time_grid = st.columns(2)
+        text_grid = st.columns(3)
         data = st.session_state.similar_images
-        time_grid[0].write("Processing time: {:.2f} secs.".format(
+        text_grid[0].write("Processing time: {:.2f} secs.".format(
             st.session_state.processing_time))
-        time_grid[1].write("Searching time: {:.2f} secs.".format(
+        text_grid[1].write("Searching time: {:.2f} secs.".format(
             st.session_state.run_time))
-        csv_data = convert_result_to_csv(data)        
-        button_grid = st.columns(2)
+        button_grid = st.columns(3)
+        input_labels = st_tags(
+            label='Enter labels for input image:',
+            text='Press enter to add more',
+            value=suggestion_label(data),
+            suggestions=suggestion_label(data),
+            maxtags=-1,
+            key="input_labels"
+        )
+
+        csv_data = convert_result_to_csv(data, input_labels)
         button_grid[0].download_button(
-                label="Download data as CSV",
-                data=csv_data,
-                file_name="result.csv",
-                mime="text/csv",
-            )
-        page_idx = button_grid[1].selectbox(
+            label="Download data as CSV",
+            data=csv_data,
+            file_name="result.csv",
+            mime="text/csv",
+        )
+
+        page_idx = button_grid[2].selectbox(
             "Page",
             [i for i in range(1, len(data)//max_ppage + 2)],
             label_visibility="collapsed",
             format_func=lambda x: "Page " + str(x)
         )
+        correct_img = count_correct(data, input_labels)
+        text_grid[2].write(f"Correct images: {correct_img}/{len(data)}")
         with st.spinner("Loading image..."):
             display_similar_images(
-                data, IMG_FOLDER, row_size, max_ppage, page_idx)
+                data, input_labels, IMG_FOLDER, row_size, max_ppage, page_idx)
+
 
 if __name__ == "__main__":
     main()

@@ -8,3 +8,4 @@ python-dotenv>=1.0.1
 gdown>=5.2.0
 tqdm>=4.66.4
 st-annotated-text>=4.0.1
+streamlit-tags>=1.2.8
