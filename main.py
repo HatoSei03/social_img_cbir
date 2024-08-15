@@ -12,7 +12,7 @@ from processing import (
     preprocess_query_image, search_image
 )
 from get_data import download_database, unzip_file
-from label_handle import load_annotation
+from label_handle import load_annotation, load_plain_annotation
 
 IMG_FOLDER = "mirflickr"
 DATABASE_FOLDER = "database"
@@ -20,6 +20,7 @@ FEATURES_CSV = os.path.join(DATABASE_FOLDER, "features.csv")
 FEATURES_NPY = os.path.join(DATABASE_FOLDER, "features.npy")
 INDEX_FILE = os.path.join(DATABASE_FOLDER, "index.ann")
 ANNOTATIONS = os.path.join(DATABASE_FOLDER, "annotation.csv")
+
 
 parameters.SHOW_LABEL_SEPARATOR = True
 st.set_page_config(layout="wide")
@@ -55,6 +56,17 @@ def load_data():
         load_time = time.time() - load_time
         print(f'Load data time: {load_time:.2f} secs')
         return image_names, index
+    
+
+@st.cache_data
+def convert_result_to_csv(imgs_name):
+    result = '"rank","index","po_annotation","re_annotation"\n';
+    for idx, img in enumerate(imgs_name, start=1):
+        img_id = get_digits(img)
+        po, re = load_plain_annotation(
+            img_id, ANNOTATIONS)
+        result += f"{idx},\"{img}\",\"{'; '.join(po)}\",\"{'; '.join(re)}\"\n"
+    return result
 
 def createModel():
     extractor = None
@@ -103,13 +115,17 @@ def download_and_prepare_data():
 def get_digits(text):
     return int(''.join(filter(str.isdigit, text)))
 
-def display_similar_images(similar_images, img_folder, row_size):
+def display_similar_images(similar_images, img_folder, row_size, max_ppage, page_indx):
     grid = st.columns(row_size)
+    start_idx = (page_indx - 1) * max_ppage + 1
+    end_idx = min(page_indx * max_ppage, len(similar_images))
     for idx, image_name in enumerate(similar_images, start=1):
-        with grid[(idx-1) % row_size]:
+        if idx < start_idx or idx > end_idx:
+            continue
+        with grid[(idx-start_idx) % row_size]:
             image_path = os.path.join(img_folder, image_name)
             img_id = get_digits(image_name)
-            po_annotation, re_annotation = load_annotation(img_id)
+            po_annotation, re_annotation = load_annotation(img_id, ANNOTATIONS)
             similar_img = cv.imread(image_path)
             caption = f'Image {idx}: {image_name}'
             st.image(similar_img, channels="BGR",
@@ -126,7 +142,7 @@ def display_similar_images(similar_images, img_folder, row_size):
                     re_annotation
                 ]
             )
-        if idx % row_size == 0:
+        if (idx-start_idx+1) % row_size == 0:
             grid = st.columns(row_size)
 
 
@@ -142,7 +158,9 @@ def main():
             return
 
     st.title("Social Image Retrieval System")
-    row_size = st.sidebar.select_slider("Row size:", range(1, 10), value=3)
+    row_size = st.sidebar.select_slider("Row size:", range(1, 11), value=3)
+    max_ppage = st.sidebar.number_input(
+        "Max image per page", min_value=1, max_value=50, value=20)
     uploaded_file = st.sidebar.file_uploader(
         "Choose an image...", type=["jpg", "png", "jpeg"])
 
@@ -162,19 +180,21 @@ def main():
                         caption='Uploaded Image.', use_column_width=True)
         
         if btn_searching and img is not None:
+            load_data_and_create_model()
             with st.spinner("Processing image..."):
                 start = time.time()
                 query_img_array = preprocess_query_image(img)
                 image_names, index, feature_extractor = load_data_and_create_model()
                 
-                if feature_extractor is None:
-                    print('Feature extractor is None')
-                    return
+                while feature_extractor is None:
+                    load_data.clear()
+                    load_data_and_create_model.clear()
+                    image_names, index, feature_extractor = load_data_and_create_model()
 
                 query_feature = feature_extractor.predict(query_img_array)
                 end = time.time()
                 run_time = (end - start)
-                st.write(f'Runtime: {run_time:.2f} secs. Image processed!')
+                st.session_state.processing_time = run_time
 
             with st.spinner("Searching..."):
                 start = time.time()
@@ -183,11 +203,31 @@ def main():
                 end = time.time()
                 run_time = (end - start)
                 st.session_state.similar_images = similar_images
-                st.write(f'Runtime: {run_time:.2f} secs. Similar images:')
+                st.session_state.run_time = run_time
     if "similar_images" in st.session_state:
+        time_grid = st.columns(2)
+        data = st.session_state.similar_images
+        time_grid[0].write("Processing time: {:.2f} secs.".format(
+            st.session_state.processing_time))
+        time_grid[1].write("Searching time: {:.2f} secs.".format(
+            st.session_state.run_time))
+        csv_data = convert_result_to_csv(data)        
+        button_grid = st.columns(2)
+        button_grid[0].download_button(
+                label="Download data as CSV",
+                data=csv_data,
+                file_name="result.csv",
+                mime="text/csv",
+            )
+        page_idx = button_grid[1].selectbox(
+            "Page",
+            [i for i in range(1, len(data)//max_ppage + 2)],
+            label_visibility="collapsed",
+            format_func=lambda x: "Page " + str(x)
+        )
         with st.spinner("Loading image..."):
             display_similar_images(
-                st.session_state.similar_images, IMG_FOLDER, row_size)
+                data, IMG_FOLDER, row_size, max_ppage, page_idx)
 
 if __name__ == "__main__":
     main()
