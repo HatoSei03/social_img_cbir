@@ -269,7 +269,7 @@ def main():
     st.title("Social Image Retrieval System")
     isDemo = st.sidebar.toggle("Experiment mode", False)
     st.session_state.isDemo = isDemo
-    ignore_first = st.sidebar.toggle("Ignore first image", False)
+    ignore_first = st.sidebar.toggle("Ignore first result image", False)
     st.session_state.ignore_first = ignore_first
     row_size = st.sidebar.select_slider("Row size:", range(1, 11), value=3)
     max_ppage = st.sidebar.number_input(
