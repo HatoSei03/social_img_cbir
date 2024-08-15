@@ -329,6 +329,7 @@ def main():
             maxtags=-1,
             key="input_labels"
         )
+        input_labels = [label.lower() for label in input_labels]
 
         csv_data = convert_result_to_csv(data, input_labels)
         button_grid[0].download_button(
@@ -363,9 +364,9 @@ def main():
                 ["Correct images in DB", correct_db],
                 ["Precision", precision],
                 ["Recall", recall],
-                ["RR", rr],
+                ["Reciprocal Rank (RR)", rr],
                 ["RR ignoring first", rr_igf],
-                ["AP@K", apk]],
+                ["Average Precision@K (AP@K)", apk]],
             columns=["Measurements", "Values"]
         )
         measurements.set_index("Measurements", inplace=True)
