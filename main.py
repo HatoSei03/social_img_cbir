@@ -87,7 +87,7 @@ def suggestion_label(imgs_list):
     return sorted(result)
 
 
-@st.cache_data
+@st.cache_data(show_spinner=False)
 def calc_pos_neg(input_label):
     positive = 0
     RE_COL = 3
@@ -104,7 +104,7 @@ def calc_pos_neg(input_label):
     return positive, negative
 
 
-@st.cache_data
+@st.cache_data(show_spinner=False)
 def count_correct(img_result, input_label):
     correct_label_img = 0
     for img in img_result:
