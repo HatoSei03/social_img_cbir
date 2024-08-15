@@ -7,6 +7,7 @@ import cv2 as cv
 from dotenv import load_dotenv
 from annotated_text import annotated_text, parameters
 from streamlit_tags import st_tags
+import pandas as pd
 
 from processing import (
     set_random_seed, define_model, create_annoy_index, AnnoyIndex,
@@ -31,6 +32,7 @@ def setup_environment():
     os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
     set_random_seed(50)
     load_dotenv()
+    pd.options.display.float_format = "{:,.4f}".format
 
 
 @st.cache_resource(show_spinner=True)
@@ -101,6 +103,7 @@ def count_correct(img_result, input_label):
                 break
     return correct_label_img
 
+
 @st.cache_data(show_spinner=False)
 def count_correct_in_db(input_label):
     correct_label_img = 0
@@ -115,6 +118,43 @@ def count_correct_in_db(input_label):
                     correct_label_img -= 1
                     break
     return correct_label_img
+
+
+@st.cache_data(show_spinner=False)
+def calc_rr(img_result, input_label):
+    for idx, img in enumerate(img_result):
+        img_id = get_digits(img)
+        re = load_plain_annotation(
+            img_id, ANNOTATIONS)[1]
+        is_correct = True
+        for label in input_label:
+            if label not in re:
+                is_correct = False
+                break
+        if is_correct:
+            return 1/(idx+1)
+    return 0
+
+
+@st.cache_data(show_spinner=False)
+def calc_apk(img_result, input_label):
+    pk_values = []
+    k = len(img_result)
+    correct_counter = 0
+
+    for i in range(1, k+1):
+        img_id = get_digits(img_result[i-1])
+        re = load_plain_annotation(
+            img_id, ANNOTATIONS)[1]
+        is_correct = True
+        for label in input_label:
+            if label not in re:
+                is_correct = False
+                break
+        if is_correct:
+            correct_counter += 1
+            pk_values.append(correct_counter/i)
+    return np.mean(pk_values) if len(pk_values) > 0 else 0
 
 
 def createModel():
@@ -181,11 +221,13 @@ def display_similar_images(similar_images, input_label, img_folder, row_size, ma
             similar_img = cv.imread(image_path)
             caption = f'Image {idx}: {image_name}'
             st.image(similar_img, channels="BGR",
-                    caption=caption, use_column_width=True)
-            
+                     caption=caption, use_column_width=True)
+
             re_label = load_plain_annotation(img_id, ANNOTATIONS)[1]
-            match_labels_idx = [idx for idx, label in enumerate(re_label) if label in input_label]
-            match_annotations = [re_annotation[idx] for idx in match_labels_idx]
+            match_labels_idx = [idx for idx, label in enumerate(
+                re_label) if label in input_label]
+            match_annotations = [re_annotation[idx]
+                                 for idx in match_labels_idx]
             annotated_text(
                 [
                     f"{len(po_annotation)} potential: ",
@@ -204,7 +246,7 @@ def display_similar_images(similar_images, input_label, img_folder, row_size, ma
                     match_annotations
                 ]
             )
-            
+
         if (idx-start_idx+1) % row_size == 0:
             grid = st.columns(row_size)
 
@@ -235,7 +277,7 @@ def main():
         img = []
 
     top_k = st.sidebar.number_input(
-        "Number of top K results", min_value=1, max_value=25000, value=5)
+        "Number of top K results", min_value=1, max_value=25000, value=1000)
 
     if uploaded_file:
         btn_searching = st.sidebar.button("Search")
@@ -254,7 +296,8 @@ def main():
                     try:
                         start = time.time()
                         image_names, index, feature_extractor = load_data_and_create_model()
-                        query_feature = feature_extractor.predict(query_img_array)
+                        query_feature = feature_extractor.predict(
+                            query_img_array)
                         success = True
                     except:
                         load_data.clear()
@@ -273,12 +316,7 @@ def main():
                 st.session_state.similar_images = similar_images
                 st.session_state.run_time = run_time
     if "similar_images" in st.session_state:
-        text_grid = st.columns(4)
         data = st.session_state.similar_images
-        text_grid[0].write("Processing time: {:.2f} secs.".format(
-            st.session_state.processing_time))
-        text_grid[1].write("Searching time: {:.2f} secs.".format(
-            st.session_state.run_time))
         button_grid = st.columns(3)
         input_labels = st_tags(
             label='Enter labels for input image:',
@@ -291,7 +329,7 @@ def main():
 
         csv_data = convert_result_to_csv(data, input_labels)
         button_grid[0].download_button(
-            label="Download data as CSV",
+            label="Download result as CSV",
             data=csv_data,
             file_name="result.csv",
             mime="text/csv",
@@ -305,8 +343,35 @@ def main():
         )
         correct_img = count_correct(data, input_labels)
         correct_db = count_correct_in_db(input_labels)
-        text_grid[2].write(f"Precision images: {correct_img}/{len(data)}")
-        text_grid[3].write(f"Recall database: {correct_img}/{correct_db}")
+
+        process_time = round(st.session_state.processing_time, 3)
+        search_time = round(st.session_state.run_time, 3)
+        precision = round(correct_img/len(data), 3) if len(data) > 0 else 0
+        recall = round(correct_img/correct_db, 3) if correct_db > 0 else 0
+        rr = round(calc_rr(data, input_labels), 3) 
+        apk = round(calc_apk(data, input_labels), 3)
+
+        measurements = pd.DataFrame(
+            [
+             ["Processing time (secs)",  process_time],
+             ["Searching time (secs)",  search_time],
+             ["Correct images", correct_img],
+             ["Correct images in DB", correct_db],
+             ["Precision", precision],
+             ["Recall", recall],
+             ["RR", rr],
+             ["AP@K", apk]],
+            columns=["Measurements", "Values"]
+        )
+        measurements.set_index("Measurements", inplace=True)
+        measurements.round(4)
+        st.sidebar.table(measurements)
+        st.sidebar.download_button(
+            label="Save measurements as CSV",
+            data=measurements.to_csv().encode("utf-8"),
+            file_name="measurements.csv",
+            mime="text/csv",
+        )
         with st.spinner("Loading image..."):
             display_similar_images(
                 data, input_labels, IMG_FOLDER, row_size, max_ppage, page_idx)
