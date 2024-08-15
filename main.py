@@ -64,12 +64,14 @@ def load_data():
 
 @st.cache_data
 def convert_result_to_csv(imgs_name, input_labels):
+    isDemo = st.session_state.isDemo
     result = '"rank","index","po_annotation","re_annotation","match_labels"\n'
     for idx, img in enumerate(imgs_name, start=1):
         img_id = get_digits(img)
         po, re = load_plain_annotation(
             img_id, ANNOTATIONS)
-        match_labels = [label for label in input_labels if label in re]
+        match_labels = "; ".join(
+            [label for label in input_labels if label in re]) if isDemo else ""
         result += f"{idx},\"{img}\",\"{'; '.join(po)}\",\"{'; '.join(re)}\",\"{match_labels}\"\n"
     return result
 
@@ -243,12 +245,14 @@ def display_similar_images(similar_images, input_label, img_folder, row_size, ma
                     re_annotation
                 ]
             )
-            annotated_text(
-                [
-                    f"{len(match_annotations)} match: ",
-                    match_annotations
-                ]
-            )
+            isDemo = st.session_state.isDemo
+            if isDemo:
+                annotated_text(
+                    [
+                        f"{len(match_annotations)} match: ",
+                        match_annotations
+                    ]
+                )
 
         if (idx-start_idx+1) % row_size == 0:
             grid = st.columns(row_size)
@@ -266,6 +270,8 @@ def main():
             return
 
     st.title("Social Image Retrieval System")
+    isDemo = st.sidebar.toggle("Experiment mode", False)
+    st.session_state.isDemo = isDemo
     row_size = st.sidebar.select_slider("Row size:", range(1, 11), value=3)
     max_ppage = st.sidebar.number_input(
         "Max image per page", min_value=1, max_value=50, value=20)
@@ -321,21 +327,26 @@ def main():
     if "similar_images" in st.session_state:
         data = st.session_state.similar_images
         button_grid = st.columns(3)
-        input_labels = st_tags(
-            label='Enter labels for input image:',
-            text='Press enter to add more',
-            value=suggestion_label(data),
-            suggestions=suggestion_label(data),
-            maxtags=-1,
-            key="input_labels"
-        )
-        input_labels = [label.lower() for label in input_labels]
+        isDemo = st.session_state.isDemo
+        
+        if isDemo:
+            input_labels = st_tags(
+                label='Enter labels for input image:',
+                text='Press enter to add more',
+                value=suggestion_label(data),
+                suggestions=suggestion_label(data),
+                maxtags=-1,
+                key="input_labels"
+            )
+            input_labels = [label.lower().strip() for label in input_labels]
+        else:
+            input_labels = []
 
         csv_data = convert_result_to_csv(data, input_labels)
         button_grid[0].download_button(
             label="Download result as CSV",
             data=csv_data,
-            file_name="result.csv",
+            file_name=f"{uploaded_file.name.replace('.','_')}_result.csv",
             mime="text/csv",
         )
 
@@ -354,28 +365,37 @@ def main():
         recall = round(correct_img/correct_db, 3) if correct_db > 0 else 0
         rr = round(calc_rr(data, input_labels), 3)
         rr_igf = round(calc_rr(data, input_labels, ignore_first=True), 3)
-        apk = round(calc_apk(data, input_labels), 3)
+        apk = round(calc_apk(data, input_labels), 3) if isDemo else -1
 
-        measurements = pd.DataFrame(
-            [
-                ["Processing time (secs)",  process_time],
-                ["Searching time (secs)",  search_time],
-                ["Correct images", correct_img],
-                ["Correct images in DB", correct_db],
-                ["Precision", precision],
-                ["Recall", recall],
-                ["Reciprocal Rank (RR)", rr],
-                ["RR ignoring first", rr_igf],
-                ["Average Precision@K (AP@K)", apk]],
-            columns=["Measurements", "Values"]
-        )
+        if isDemo:
+            measurements = pd.DataFrame(
+                [
+                    ["Processing time (secs)",  process_time],
+                    ["Searching time (secs)",  search_time],
+                    ["Correct images", correct_img],
+                    ["Correct images in DB", correct_db],
+                    ["Precision", precision],
+                    ["Recall", recall],
+                    ["Reciprocal Rank (RR)", rr],
+                    ["RR ignoring first", rr_igf],
+                    ["Average Precision@K (AP@K)", apk]],
+                columns=["Measurements", "Values"]
+            )
+        else:
+            measurements = pd.DataFrame(
+                [
+                    ["Processing time (secs)",  process_time],
+                    ["Searching time (secs)",  search_time],
+                ],
+                columns=["Measurements", "Values"]
+            )
         measurements.set_index("Measurements", inplace=True)
         measurements.round(4)
         st.sidebar.table(measurements)
         st.sidebar.download_button(
             label="Save measurements as CSV",
             data=measurements.to_csv().encode("utf-8"),
-            file_name="measurements.csv",
+            file_name=f"{uploaded_file.name.replace('.','_')}_measurements.csv",
             mime="text/csv",
         )
         with st.spinner("Loading image..."):
