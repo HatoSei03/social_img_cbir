@@ -88,23 +88,6 @@ def suggestion_label(imgs_list):
 
 
 @st.cache_data(show_spinner=False)
-def calc_pos_neg(input_label):
-    positive = 0
-    RE_COL = 3
-    with open(ANNOTATIONS, 'r') as f:
-        reader = csv.reader(f)
-        for row in reader:
-            re_labels = row[RE_COL].split(';')
-            positive += 1
-            for label in input_label:
-                if label not in re_labels:
-                    positive -= 1
-                    break
-    negative = len(open(ANNOTATIONS).readlines()) + 1 - positive
-    return positive, negative
-
-
-@st.cache_data(show_spinner=False)
 def count_correct(img_result, input_label):
     correct_label_img = 0
     for img in img_result:
@@ -116,6 +99,21 @@ def count_correct(img_result, input_label):
             if label not in re:
                 correct_label_img -= 1
                 break
+    return correct_label_img
+
+@st.cache_data(show_spinner=False)
+def count_correct_in_db(input_label):
+    correct_label_img = 0
+    RE_COL = 3
+    with open(ANNOTATIONS, 'r') as f:
+        reader = csv.reader(f, delimiter=',')
+        for row in reader:
+            re_labels = row[RE_COL].split(';')
+            correct_label_img += 1
+            for label in input_label:
+                if label not in re_labels:
+                    correct_label_img -= 1
+                    break
     return correct_label_img
 
 
@@ -249,21 +247,19 @@ def main():
             with st.spinner("Processing image..."):
                 start = time.time()
                 query_img_array = preprocess_query_image(img)
-                
                 image_names, index, feature_extractor = None, None, None
-                try:
-                    image_names, index, feature_extractor = load_data_and_create_model()
-                except:
-                    load_data.clear()
-                    load_data_and_create_model.clear()
-                    st.error('Failed to load features and index. Please press "Search" again.')
-                
-                if image_names is None or index is None or feature_extractor is None:
-                    load_data.clear()
-                    load_data_and_create_model.clear()
-                    st.error('Failed to load features and index. Please press "Search" again.')
+                query_feature = None
+                success = False
+                while not success:
+                    try:
+                        start = time.time()
+                        image_names, index, feature_extractor = load_data_and_create_model()
+                        query_feature = feature_extractor.predict(query_img_array)
+                        success = True
+                    except:
+                        load_data.clear()
+                        load_data_and_create_model.clear()
 
-                query_feature = feature_extractor.predict(query_img_array)
                 end = time.time()
                 run_time = (end - start)
                 st.session_state.processing_time = run_time
@@ -277,7 +273,7 @@ def main():
                 st.session_state.similar_images = similar_images
                 st.session_state.run_time = run_time
     if "similar_images" in st.session_state:
-        text_grid = st.columns(3)
+        text_grid = st.columns(4)
         data = st.session_state.similar_images
         text_grid[0].write("Processing time: {:.2f} secs.".format(
             st.session_state.processing_time))
@@ -308,7 +304,9 @@ def main():
             format_func=lambda x: "Page " + str(x)
         )
         correct_img = count_correct(data, input_labels)
-        text_grid[2].write(f"Correct images: {correct_img}/{len(data)}")
+        correct_db = count_correct_in_db(input_labels)
+        text_grid[2].write(f"Precision images: {correct_img}/{len(data)}")
+        text_grid[3].write(f"Recall database: {correct_img}/{correct_db}")
         with st.spinner("Loading image..."):
             display_similar_images(
                 data, input_labels, IMG_FOLDER, row_size, max_ppage, page_idx)
