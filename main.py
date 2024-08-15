@@ -123,7 +123,7 @@ def count_correct_in_db(input_label):
 
 
 @st.cache_data(show_spinner=False)
-def calc_rr(img_result, input_label, ignore_first=False):
+def calc_rr(img_result, input_label):
     for idx, img in enumerate(img_result):
         img_id = get_digits(img)
         re = load_plain_annotation(
@@ -134,9 +134,6 @@ def calc_rr(img_result, input_label, ignore_first=False):
                 is_correct = False
                 break
         if is_correct:
-            if ignore_first:
-                ignore_first = False
-                continue
             return 1/(idx+1)
     return 0
 
@@ -272,6 +269,8 @@ def main():
     st.title("Social Image Retrieval System")
     isDemo = st.sidebar.toggle("Experiment mode", False)
     st.session_state.isDemo = isDemo
+    ignore_first = st.sidebar.toggle("Ignore first image", False)
+    st.session_state.ignore_first = ignore_first
     row_size = st.sidebar.select_slider("Row size:", range(1, 11), value=3)
     max_ppage = st.sidebar.number_input(
         "Max image per page", min_value=1, max_value=50, value=20)
@@ -325,7 +324,8 @@ def main():
                 st.session_state.similar_images = similar_images
                 st.session_state.run_time = run_time
     if "similar_images" in st.session_state:
-        data = st.session_state.similar_images
+        ignore_first = st.session_state.ignore_first
+        data = st.session_state.similar_images[ignore_first:]
         button_grid = st.columns(3)
         isDemo = st.session_state.isDemo
         
@@ -364,12 +364,13 @@ def main():
         precision = round(correct_img/len(data), 3) if len(data) > 0 else 0
         recall = round(correct_img/correct_db, 3) if correct_db > 0 else 0
         rr = round(calc_rr(data, input_labels), 3)
-        rr_igf = round(calc_rr(data, input_labels, ignore_first=True), 3)
         apk = round(calc_apk(data, input_labels), 3) if isDemo else -1
 
         if isDemo:
             measurements = pd.DataFrame(
                 [
+                    ["k", top_k],
+                    ["Input labels", "; ".join(input_labels)],
                     ["Processing time (secs)",  process_time],
                     ["Searching time (secs)",  search_time],
                     ["Correct images", correct_img],
@@ -377,13 +378,13 @@ def main():
                     ["Precision", precision],
                     ["Recall", recall],
                     ["Reciprocal Rank (RR)", rr],
-                    ["RR ignoring first", rr_igf],
                     ["Average Precision@K (AP@K)", apk]],
                 columns=["Measurements", "Values"]
             )
         else:
             measurements = pd.DataFrame(
                 [
+                    ["k", top_k],
                     ["Processing time (secs)",  process_time],
                     ["Searching time (secs)",  search_time],
                 ],
