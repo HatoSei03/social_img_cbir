@@ -1,0 +1,11 @@
+Measurements,Values
+k,1000
+Input labels,dog
+Processing time (secs),3.617
+Searching time (secs),0.145
+Correct images,101
+Correct images in DB,590
+Precision,0.101
+Recall,0.171
+Reciprocal Rank (RR),1.0
+Average Precision@K (AP@K),0.332

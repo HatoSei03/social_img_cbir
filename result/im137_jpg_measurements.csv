@@ -1,0 +1,11 @@
+Measurements,Values
+k,1000
+Input labels,car
+Processing time (secs),3.517
+Searching time (secs),0.165
+Correct images,163
+Correct images in DB,380
+Precision,0.163
+Recall,0.429
+Reciprocal Rank (RR),1.0
+Average Precision@K (AP@K),0.754

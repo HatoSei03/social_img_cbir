@@ -1,0 +1,11 @@
+Measurements,Values
+k,1000
+Input labels,clouds
+Processing time (secs),3.349
+Searching time (secs),0.109
+Correct images,437
+Correct images in DB,1350
+Precision,0.437
+Recall,0.324
+Reciprocal Rank (RR),0.5
+Average Precision@K (AP@K),0.531

@@ -1,0 +1,11 @@
+Measurements,Values
+k,1000
+Input labels,flower
+Processing time (secs),3.372
+Searching time (secs),0.498
+Correct images,572
+Correct images in DB,1077
+Precision,0.573
+Recall,0.531
+Reciprocal Rank (RR),1.0
+Average Precision@K (AP@K),0.92
