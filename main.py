@@ -144,7 +144,7 @@ def calc_apk(img_result, input_label):
     k = len(img_result)
     correct_counter = 0
 
-    for i in range(1, k+1):
+    for i in range(1, k+1, 5):
         img_id = get_digits(img_result[i-1])
         re = load_plain_annotation(
             img_id, ANNOTATIONS)[1]
@@ -318,14 +318,14 @@ def main():
             with st.spinner("Searching..."):
                 start = time.time()
                 similar_images = search_image(
-                    query_feature[0], index, image_names, top_k=int(top_k))
+                    query_feature[0], index, image_names, top_k=int(top_k) + 1)
                 end = time.time()
                 run_time = (end - start)
                 st.session_state.similar_images = similar_images
                 st.session_state.run_time = run_time
     if "similar_images" in st.session_state:
         ignore_first = st.session_state.ignore_first
-        data = st.session_state.similar_images[ignore_first:]
+        data = st.session_state.similar_images[1:] if ignore_first else st.session_state.similar_images[:-1]
         button_grid = st.columns(3)
         isDemo = st.session_state.isDemo
         
@@ -375,8 +375,8 @@ def main():
                     ["Searching time (secs)",  search_time],
                     ["Correct images", correct_img],
                     ["Correct images in DB", correct_db],
-                    ["Precision", precision],
-                    ["Recall", recall],
+                    ["Precision@K", precision],
+                    ["Recall@K", recall],
                     ["Reciprocal Rank (RR)", rr],
                     ["Average Precision@K (AP@K)", apk]],
                 columns=["Measurements", "Values"]
