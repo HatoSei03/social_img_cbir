@@ -124,6 +124,7 @@ def load_color_map(fpath):
             color_map[row[0]] = row[1]
     return color_map
 
+
 @st.cache_data(show_spinner=False)
 def count_correct(img_result, input_label):
     correct_label_img = 0
@@ -138,7 +139,7 @@ def count_correct(img_result, input_label):
             if invidual_correct >= round_threadhold:
                 correct_label_img += 1
                 break
-            
+
     return correct_label_img
 
 
@@ -147,7 +148,6 @@ def count_correct_in_db(input_label):
     correct_label_img = 0
     PO_COL = 1
     RE_COL = 2
-    print("Input label: ", input_label)
     if len(input_label) == 0:
         return 0
     round_threadhold = np.ceil(len(input_label)*THREADHOLD)
@@ -159,7 +159,7 @@ def count_correct_in_db(input_label):
             combine_list = list(set(po+re))
             match_labels = [
                 label for label in input_label if label in combine_list]
-            correct_label_img += len(match_labels)  >= round_threadhold
+            correct_label_img += len(match_labels) >= round_threadhold
     return correct_label_img
 
 
@@ -258,7 +258,7 @@ def display_similar_images(similar_images, input_label, img_folder, row_size, ma
             re_annotation = [
                 annotation(
                     label, "", background=color_map[label], color="black") for label in re]
-            
+
             similar_img = cv.imread(image_path)
             caption = f'Image {idx}: {image_name}'
             st.image(similar_img, channels="BGR",
@@ -288,6 +288,7 @@ def display_similar_images(similar_images, input_label, img_folder, row_size, ma
                 )
         if (idx-start_idx+1) % row_size == 0:
             grid = st.columns(row_size)
+
 
 def reload_model_and_index():
     st.cache_data. clear()
@@ -329,6 +330,11 @@ def main():
         "Number of top K results", min_value=1, max_value=25000, value=10)
 
     if uploaded_file:
+        if "img_name" in st.session_state and "input_labels" in st.session_state:
+            if uploaded_file.name != st.session_state.img_name:
+                st.session_state.similar_images.clear()
+                
+        st.session_state.img_name = uploaded_file.name
         searching_grid = st.sidebar.columns(2)
         btn_searching = searching_grid[0].button("Search")
         searching_grid[1].button(
@@ -369,24 +375,36 @@ def main():
                 st.session_state.run_time = run_time
     if "similar_images" in st.session_state:
         ignore_first = st.session_state.ignore_first
-        data = st.session_state.similar_images[1:
-                                               ] if ignore_first else st.session_state.similar_images[:-1]
+        data = st.session_state.similar_images[1:] if ignore_first else st.session_state.similar_images[:-1]
         button_grid = st.columns(3)
         isDemo = st.session_state.isDemo
-
+        
         if isDemo:
+            storaged_labels = st.session_state.input_labels if "input_labels" in st.session_state else []
+            storaged_labels = [label.lower().strip()
+                            for sublist in storaged_labels for label in sublist.split(';')]
+            storaged_labels = sorted(list(set(storaged_labels)))
+            
             input_labels = st_tags(
                 label='Enter labels for input image:',
                 text='Press enter to add the labels of the query image',
+                value=storaged_labels,
                 suggestions=suggestion_label(data),
                 maxtags=-1,
                 key="input_labels"
             )
-            input_labels = [label.lower().strip() for label in input_labels]
         else:
             input_labels = []
-        # remove duplicate labels
+        
+        # flatten the list of labels, sublists can be split by ';'
+        input_labels = [label.lower().strip() for sublist in input_labels for label in sublist.split(';')]
         input_labels = sorted(list(set(input_labels)))
+        
+        if "input_labels" in st.session_state:        
+            st.session_state.input_labels.clear()
+        else:
+            st.session_state.input_labels = []
+        st.session_state.input_labels.extend(input_labels)
 
         csv_data = convert_result_to_csv(data, input_labels)
         button_grid[0].download_button(
