@@ -381,6 +381,8 @@ def main():
             input_labels = [label.lower().strip() for label in input_labels]
         else:
             input_labels = []
+        # remove duplicate labels
+        input_labels = list(set(input_labels))
 
         csv_data = convert_result_to_csv(data, input_labels)
         button_grid[0].download_button(
