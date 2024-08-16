@@ -150,14 +150,16 @@ def count_correct_in_db(input_label):
     print("Input label: ", input_label)
     if len(input_label) == 0:
         return 0
+    round_threadhold = np.ceil(len(input_label)*THREADHOLD)
     with open(ANNOTATIONS, 'r') as f:
         reader = csv.reader(f, delimiter=',')
         for row in reader:
             po = row[PO_COL].split(';')
             re = row[RE_COL].split(';')
-            po = list(set(po+re))
-            match_labels = [label for label in input_label if label in po]
-            correct_label_img += len(match_labels) == len(input_label)
+            combine_list = list(set(po+re))
+            match_labels = [
+                label for label in input_label if label in combine_list]
+            correct_label_img += len(match_labels)  >= round_threadhold
     return correct_label_img
 
 
