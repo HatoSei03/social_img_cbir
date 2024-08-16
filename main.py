@@ -107,9 +107,11 @@ def get_matching(imgs_list, input_labels):
         po, re = load_plain_annotation(
             img_id, ANNOTATIONS)
         po = list(set(po+re))
-        match_labels = [label for label in input_labels if label in po and label != '']
+        match_labels = [
+            label for label in input_labels if label in po and label != '']
         result.append(match_labels)
     return result
+
 
 @st.cache_data(show_spinner=False)
 def count_correct(img_result, input_label):
@@ -135,8 +137,8 @@ def count_correct_in_db(input_label):
         for row in reader:
             po = row[PO_COL].split(';')
             re = row[RE_COL].split(';')
-            #print(f"file: {row[0]}, po: {po}, re: {re}")
-            po = list(set(po+re)) 
+            # print(f"file: {row[0]}, po: {po}, re: {re}")
+            po = list(set(po+re))
             match_labels = [label for label in input_label if label in po]
             correct_label_img += len(match_labels) == len(input_label)
     return correct_label_img
@@ -209,6 +211,8 @@ def download_and_prepare_data():
     st.success("Finished getting data!")
 
 # get only digits from string
+
+
 def get_digits(text):
     return int(''.join(filter(str.isdigit, text)))
 
@@ -224,7 +228,8 @@ def display_similar_images(similar_images, input_label, img_folder, row_size, ma
         with grid[(idx-start_idx) % row_size]:
             image_path = os.path.join(img_folder, image_name)
             img_id = get_digits(image_name)
-            po_annotation, re_annotation, po, re = load_annotation(img_id, ANNOTATIONS)
+            po_annotation, re_annotation, po, re = load_annotation(
+                img_id, ANNOTATIONS)
             similar_img = cv.imread(image_path)
             caption = f'Image {idx}: {image_name}'
             st.image(similar_img, channels="BGR",
@@ -246,9 +251,11 @@ def display_similar_images(similar_images, input_label, img_folder, row_size, ma
                 match_annotations = []
                 for label in matching_labels[idx-1]:
                     if label in po:
-                        match_annotations.append(po_annotation[po.index(label)])
+                        match_annotations.append(
+                            po_annotation[po.index(label)])
                     elif label in re:
-                        match_annotations.append(re_annotation[re.index(label)])
+                        match_annotations.append(
+                            re_annotation[re.index(label)])
                 annotated_text(
                     [
                         f"{len(match_annotations)} match: ",
@@ -258,10 +265,12 @@ def display_similar_images(similar_images, input_label, img_folder, row_size, ma
         if (idx-start_idx+1) % row_size == 0:
             grid = st.columns(row_size)
 
+
 def reload_model_and_index():
     load_data.clear()
     load_data_and_create_model.clear()
     load_data_and_create_model()
+
 
 def main():
     setup_environment()
@@ -298,7 +307,8 @@ def main():
     if uploaded_file:
         searching_grid = st.sidebar.columns(2)
         btn_searching = searching_grid[0].button("Search")
-        searching_grid[1].button("Reload model", on_click=reload_model_and_index)
+        searching_grid[1].button(
+            "Reload model", on_click=reload_model_and_index)
         st.sidebar.image(img, channels="BGR",
                          caption='Uploaded Image.', use_column_width=True)
 
@@ -335,10 +345,11 @@ def main():
                 st.session_state.run_time = run_time
     if "similar_images" in st.session_state:
         ignore_first = st.session_state.ignore_first
-        data = st.session_state.similar_images[1:] if ignore_first else st.session_state.similar_images[:-1]
+        data = st.session_state.similar_images[1:
+                                               ] if ignore_first else st.session_state.similar_images[:-1]
         button_grid = st.columns(3)
         isDemo = st.session_state.isDemo
-        
+
         if isDemo:
             input_labels = st_tags(
                 label='Enter labels for input image:',
@@ -355,7 +366,7 @@ def main():
         button_grid[0].download_button(
             label="Download result as CSV",
             data=csv_data,
-            file_name=f"{uploaded_file.name.replace('.','_')}_result.csv",
+            file_name=f"Resul{uploaded_file.name.replace('.','_')}.csv",
             mime="text/csv",
         )
 
@@ -406,7 +417,7 @@ def main():
         st.sidebar.download_button(
             label="Save measurements as CSV",
             data=measurements.to_csv().encode("utf-8"),
-            file_name=f"{uploaded_file.name.replace('.','_')}_measurements.csv",
+            file_name=f"Measurements_{uploaded_file.name.replace('.','_')}.csv",
             mime="text/csv",
         )
         with st.spinner("Loading image..."):
