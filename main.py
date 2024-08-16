@@ -388,7 +388,7 @@ def main():
         button_grid[0].download_button(
             label="Download result as CSV",
             data=csv_data,
-            file_name=f"Resul{uploaded_file.name.replace('.','_')}.csv",
+            file_name=f"Result_{uploaded_file.name.replace('.','_')}.csv",
             mime="text/csv",
         )
 
