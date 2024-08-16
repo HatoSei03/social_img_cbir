@@ -5,7 +5,7 @@ import numpy as np
 import streamlit as st
 import cv2 as cv
 from dotenv import load_dotenv
-from annotated_text import annotated_text, parameters
+from annotated_text import annotated_text, parameters, annotation
 from streamlit_tags import st_tags
 import pandas as pd
 
@@ -14,7 +14,7 @@ from processing import (
     preprocess_query_image, search_image
 )
 from get_data import download_database, unzip_file
-from label_handle import load_annotation, load_plain_annotation
+from label_handle import load_plain_annotation
 
 IMG_FOLDER = "mirflickr"
 DATABASE_FOLDER = "database"
@@ -22,6 +22,8 @@ FEATURES_CSV = os.path.join(DATABASE_FOLDER, "features.csv")
 FEATURES_NPY = os.path.join(DATABASE_FOLDER, "features.npy")
 INDEX_FILE = os.path.join(DATABASE_FOLDER, "index.ann")
 ANNOTATIONS = os.path.join(DATABASE_FOLDER, "annotation.csv")
+COLOR_MAPPING = os.path.join(DATABASE_FOLDER, "color.csv")
+THREADHOLD = 0.5
 
 
 parameters.SHOW_LABEL_SEPARATOR = True
@@ -114,17 +116,29 @@ def get_matching(imgs_list, input_labels):
 
 
 @st.cache_data(show_spinner=False)
+def load_color_map(fpath):
+    color_map = {}
+    with open(fpath, 'r') as f:
+        reader = csv.reader(f, delimiter=',')
+        for row in reader:
+            color_map[row[0]] = row[1]
+    return color_map
+
+@st.cache_data(show_spinner=False)
 def count_correct(img_result, input_label):
     correct_label_img = 0
     matching_labels = get_matching(img_result, input_label)
+    round_threadhold = np.ceil(len(input_label)*THREADHOLD)
     if len(matching_labels) == 0:
         return 0
     for match_list in matching_labels:
-        correct_label_img += 1
+        invidual_correct = 0
         for label in input_label:
-            if label not in match_list:
-                correct_label_img -= 1
+            invidual_correct += label in match_list
+            if invidual_correct >= round_threadhold:
+                correct_label_img += 1
                 break
+            
     return correct_label_img
 
 
@@ -132,7 +146,7 @@ def count_correct(img_result, input_label):
 def count_correct_in_db(input_label):
     correct_label_img = 0
     PO_COL = 1
-    RE_COL = 3
+    RE_COL = 2
     print("Input label: ", input_label)
     if len(input_label) == 0:
         return 0
@@ -141,7 +155,6 @@ def count_correct_in_db(input_label):
         for row in reader:
             po = row[PO_COL].split(';')
             re = row[RE_COL].split(';')
-            # print(f"file: {row[0]}, po: {po}, re: {re}")
             po = list(set(po+re))
             match_labels = [label for label in input_label if label in po]
             correct_label_img += len(match_labels) == len(input_label)
@@ -211,9 +224,10 @@ def download_and_prepare_data():
             download_database(os.getenv("Features"), FEATURES_NPY)
         if not os.path.exists(ANNOTATIONS):
             download_database(os.getenv("Annotations"), ANNOTATIONS)
+        if not os.path.exists(COLOR_MAPPING):
+            download_database(os.getenv("Color"), COLOR_MAPPING)
 
     st.success("Finished getting data!")
-
 # get only digits from string
 
 
@@ -232,8 +246,15 @@ def display_similar_images(similar_images, input_label, img_folder, row_size, ma
         with grid[(idx-start_idx) % row_size]:
             image_path = os.path.join(img_folder, image_name)
             img_id = get_digits(image_name)
-            po_annotation, re_annotation, po, re = load_annotation(
-                img_id, ANNOTATIONS)
+            color_map = load_color_map(COLOR_MAPPING)
+            po, re = load_plain_annotation(img_id, ANNOTATIONS)
+            po_annotation = [
+                annotation(
+                    label, "", background=color_map[label], color="black") for label in po]
+            re_annotation = [
+                annotation(
+                    label, "", background=color_map[label], color="black") for label in re]
+            
             similar_img = cv.imread(image_path)
             caption = f'Image {idx}: {image_name}'
             st.image(similar_img, channels="BGR",
@@ -252,14 +273,9 @@ def display_similar_images(similar_images, input_label, img_folder, row_size, ma
             )
             isDemo = st.session_state.isDemo
             if isDemo:
-                match_annotations = []
-                for label in matching_labels[idx-1]:
-                    if label in po:
-                        match_annotations.append(
-                            po_annotation[po.index(label)])
-                    elif label in re:
-                        match_annotations.append(
-                            re_annotation[re.index(label)])
+                match_annotations = [
+                    annotation(
+                        label, "", background=color_map[label], color="black") for label in matching_labels[idx-1]]
                 annotated_text(
                     [
                         f"{len(match_annotations)} match: ",
@@ -268,7 +284,6 @@ def display_similar_images(similar_images, input_label, img_folder, row_size, ma
                 )
         if (idx-start_idx+1) % row_size == 0:
             grid = st.columns(row_size)
-
 
 def reload_model_and_index():
     load_data.clear()
@@ -311,8 +326,8 @@ def main():
     if uploaded_file:
         searching_grid = st.sidebar.columns(2)
         btn_searching = searching_grid[0].button("Search")
-        #searching_grid[1].button(
-        #    "Reload model", on_click=reload_model_and_index)
+        searching_grid[1].button(
+            "Reload model", on_click=reload_model_and_index)
         st.sidebar.image(img, channels="BGR",
                          caption='Uploaded Image.', use_column_width=True)
 

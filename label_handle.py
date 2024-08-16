@@ -1,6 +1,3 @@
-from annotated_text import annotation
-
-
 def read_upload(file):
     lines = []
     for line in file:
@@ -30,42 +27,16 @@ def read_line(line_number, fpath):
         line = file.readline().decode('utf-8')  # Đọc dòng thứ 1000 và giải mã
     return line
 
-def load_annotation(id, fpath):
-    # jump to line id in csv
-    line = read_line(id + 1, fpath)
-    # Split the line by commas
-    split_line = line.split(",")
-    potential = split_line[1].split(";")
-    potential_color = split_line[2].split(";")
-    relevant = split_line[3].split(";")
-    relevant_color = split_line[4].split(";")
-    
-    # tuple potential with color
-    po_ano = []
-    for i in range(len(potential)):
-        if potential[i] == "":
-            continue
-        annou = annotation(
-            potential[i], "", background=potential_color[i], color="black")
-        po_ano.append(annou)
-    
-    # tuple relevant with color
-    re_ano = []
-    for i in range(len(relevant)):
-        if relevant[i] == "":
-            continue
-        annou = annotation(
-            relevant[i], "", background=relevant_color[i], color="#000000")
-        re_ano.append(annou)
-    
-    return po_ano, re_ano, potential, relevant
-
 def load_plain_annotation(id, fpath):
 	# jump to line id in csv
 	line = read_line(id + 1, fpath)
 	# Split the line by commas
 	split_line = line.split(",")
 	potential = split_line[1].split(";")
-	relevant = split_line[3].split(";")
+	relevant = split_line[2].split(";")
+	
+	# remove empty string and strip whitespace and newline characters
+	potential = [x.strip() for x in potential if x.strip() != ""]
+	relevant = [x.strip() for x in relevant if x.strip() != ""]
 	
 	return potential, relevant

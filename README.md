@@ -25,6 +25,7 @@ The MIRFLICKR25000 dataset is a collection of 25,000 images sourced from the pho
 	CSV= "https://drive.google.com/uc?export=download&id=1l5_X9pYsgEJWMRSiXLoFmepY7sbUuzKq"
 	Features= "https://drive.google.com/uc?export=download&id=1BKTV-JNwIN7PwFIijTh8C4Fu5xPyJt3R"
 	Annotations="https://drive.google.com/uc?export=download&id=1dcVjpDwun1FFeqtRaitnAIYsupsJ27AW"
+	Color="https://drive.google.com/uc?export=download&id=1biHqKCnTBR6WOy8hGSOyHqDSY-DQ5vLS"
 	```
 
 4. Install the Python dependencies as in [requirements.txt](requirements.txt) file by running the code
