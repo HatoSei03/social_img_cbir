@@ -18,7 +18,6 @@ def set_random_seed(seed_value=42):
 
 
 def define_model():
-
     # Load the InceptionResNetV2 model without the top classification layer
     base_model = InceptionResNetV2(
         weights='imagenet', include_top=False, input_shape=(500, 500, 3))
