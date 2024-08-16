@@ -1,0 +1,12 @@
+Measurements,Values
+file_name,im248.jpg
+k,2000
+Input labels,animals; indoor
+Processing time (secs),2.993
+Searching time (secs),0.234
+Correct images,1340
+Correct images in DB,10555
+Precision@K,0.67
+Recall@K,0.127
+Reciprocal Rank (RR),1.0
+Average Precision@K (AP@K),0.791

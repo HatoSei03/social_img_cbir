@@ -1,0 +1,12 @@
+Measurements,Values
+file_name,im46.jpg
+k,6000
+Input labels,people
+Processing time (secs),3.156
+Searching time (secs),0.408
+Correct images,2751
+Correct images in DB,10377
+Precision@K,0.459
+Recall@K,0.265
+Reciprocal Rank (RR),1.0
+Average Precision@K (AP@K),0.519

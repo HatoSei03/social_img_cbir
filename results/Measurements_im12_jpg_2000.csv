@@ -1,0 +1,12 @@
+Measurements,Values
+file_name,im12.jpg
+k,2000
+Input labels,female; indoor; people; portrait
+Processing time (secs),2.909
+Searching time (secs),0.134
+Correct images,1445
+Correct images in DB,8574
+Precision@K,0.723
+Recall@K,0.169
+Reciprocal Rank (RR),1.0
+Average Precision@K (AP@K),0.883

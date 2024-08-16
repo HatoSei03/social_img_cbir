@@ -1,0 +1,12 @@
+Measurements,Values
+file_name,im115.jpg
+k,8000
+Input labels,plant_life; river; tree; water
+Processing time (secs),3.656
+Searching time (secs),0.605
+Correct images,1936
+Correct images in DB,5513
+Precision@K,0.242
+Recall@K,0.351
+Reciprocal Rank (RR),1.0
+Average Precision@K (AP@K),0.306

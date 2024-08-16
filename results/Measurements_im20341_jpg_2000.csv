@@ -1,0 +1,12 @@
+Measurements,Values
+file_name,im20341.jpg
+k,2000
+Input labels,night; sky
+Processing time (secs),3.111
+Searching time (secs),0.205
+Correct images,897
+Correct images in DB,9482
+Precision@K,0.449
+Recall@K,0.095
+Reciprocal Rank (RR),1.0
+Average Precision@K (AP@K),0.542

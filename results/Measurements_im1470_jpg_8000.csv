@@ -1,0 +1,12 @@
+Measurements,Values
+file_name,im1470.jpg
+k,8000
+Input labels,animals; dog; indoor
+Processing time (secs),2.331
+Searching time (secs),0.303
+Correct images,769
+Correct images in DB,1393
+Precision@K,0.096
+Recall@K,0.552
+Reciprocal Rank (RR),1.0
+Average Precision@K (AP@K),0.224

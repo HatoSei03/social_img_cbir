@@ -1,0 +1,12 @@
+Measurements,Values
+file_name,im10450.jpg
+k,2000
+Input labels,plant_life; structures
+Processing time (secs),2.167
+Searching time (secs),0.1
+Correct images,1173
+Correct images in DB,14810
+Precision@K,0.587
+Recall@K,0.079
+Reciprocal Rank (RR),1.0
+Average Precision@K (AP@K),0.673

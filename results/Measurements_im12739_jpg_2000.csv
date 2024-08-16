@@ -1,0 +1,12 @@
+Measurements,Values
+file_name,im12739.jpg
+k,2000
+Input labels,car; female; people; plant_life; sky; transport; tree
+Processing time (secs),3.351
+Searching time (secs),0.128
+Correct images,476
+Correct images in DB,2375
+Precision@K,0.238
+Recall@K,0.2
+Reciprocal Rank (RR),1.0
+Average Precision@K (AP@K),0.333

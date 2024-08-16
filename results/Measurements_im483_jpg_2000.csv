@@ -1,0 +1,12 @@
+Measurements,Values
+file_name,im483.jpg
+k,2000
+Input labels,female; indoor; male; people
+Processing time (secs),3.112
+Searching time (secs),0.124
+Correct images,1524
+Correct images in DB,10135
+Precision@K,0.762
+Recall@K,0.15
+Reciprocal Rank (RR),1.0
+Average Precision@K (AP@K),0.839

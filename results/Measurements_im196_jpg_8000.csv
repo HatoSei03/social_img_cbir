@@ -1,0 +1,12 @@
+Measurements,Values
+file_name,im196.jpg
+k,8000
+Input labels,clouds; sea; sky; transport; water
+Processing time (secs),3.538
+Searching time (secs),0.413
+Correct images,1158
+Correct images in DB,2234
+Precision@K,0.145
+Recall@K,0.518
+Reciprocal Rank (RR),1.0
+Average Precision@K (AP@K),0.171

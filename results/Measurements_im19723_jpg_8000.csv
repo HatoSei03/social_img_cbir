@@ -1,0 +1,12 @@
+Measurements,Values
+file_name,im19723.jpg
+k,8000
+Input labels,indoor
+Processing time (secs),3.172
+Searching time (secs),0.484
+Correct images,2849
+Correct images in DB,8313
+Precision@K,0.356
+Recall@K,0.343
+Reciprocal Rank (RR),1.0
+Average Precision@K (AP@K),0.487

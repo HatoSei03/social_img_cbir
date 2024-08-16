@@ -1,0 +1,12 @@
+Measurements,Values
+file_name,im87.jpg
+k,6000
+Input labels,flower; plant_life
+Processing time (secs),3.183
+Searching time (secs),0.468
+Correct images,3078
+Correct images in DB,8763
+Precision@K,0.513
+Recall@K,0.351
+Reciprocal Rank (RR),1.0
+Average Precision@K (AP@K),0.757

@@ -1,0 +1,12 @@
+Measurements,Values
+file_name,im24855.jpg
+k,10
+Input labels,animals; food; indoor
+Processing time (secs),3.511
+Searching time (secs),0.009
+Correct images,8
+Correct images in DB,1659
+Precision@K,0.8
+Recall@K,0.005
+Reciprocal Rank (RR),1.0
+Average Precision@K (AP@K),0.895

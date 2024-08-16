@@ -1,0 +1,12 @@
+Measurements,Values
+file_name,im24774.jpg
+k,6000
+Input labels,animals; bird; sky; structures
+Processing time (secs),3.172
+Searching time (secs),0.374
+Correct images,1823
+Correct images in DB,6178
+Precision@K,0.304
+Recall@K,0.295
+Reciprocal Rank (RR),1.0
+Average Precision@K (AP@K),0.347

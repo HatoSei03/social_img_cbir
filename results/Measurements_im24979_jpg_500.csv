@@ -1,0 +1,12 @@
+Measurements,Values
+file_name,im24979.jpg
+k,500
+Input labels,female; male; night; people; plant_life; structures; transport; tree
+Processing time (secs),3.106
+Searching time (secs),0.052
+Correct images,248
+Correct images in DB,4156
+Precision@K,0.496
+Recall@K,0.06
+Reciprocal Rank (RR),1.0
+Average Precision@K (AP@K),0.576

@@ -1,0 +1,12 @@
+Measurements,Values
+file_name,im15005.jpg
+k,8000
+Input labels,clouds; night; sky; structures; sunset
+Processing time (secs),3.412
+Searching time (secs),0.508
+Correct images,2735
+Correct images in DB,3769
+Precision@K,0.342
+Recall@K,0.726
+Reciprocal Rank (RR),1.0
+Average Precision@K (AP@K),0.698

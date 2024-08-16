@@ -1,0 +1,12 @@
+Measurements,Values
+file_name,im38.jpg
+k,6000
+Input labels,clouds; lake; sky; water
+Processing time (secs),3.079
+Searching time (secs),0.379
+Correct images,1794
+Correct images in DB,4779
+Precision@K,0.299
+Recall@K,0.375
+Reciprocal Rank (RR),1.0
+Average Precision@K (AP@K),0.535

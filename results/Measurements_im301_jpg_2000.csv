@@ -1,0 +1,12 @@
+Measurements,Values
+file_name,im301.jpg
+k,2000
+Input labels,indoor; male; people; portrait
+Processing time (secs),3.533
+Searching time (secs),0.141
+Correct images,425
+Correct images in DB,9187
+Precision@K,0.212
+Recall@K,0.046
+Reciprocal Rank (RR),1.0
+Average Precision@K (AP@K),0.249

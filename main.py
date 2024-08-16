@@ -166,7 +166,7 @@ def count_correct_in_db(input_label):
 @st.cache_data(show_spinner=False)
 def calc_rr(img_result, input_label):
     matching_labels = get_matching(img_result, input_label)
-    round_threadhold = np.ceil(len(input_label)*THREADHOLD)
+    round_threadhold = 1 # np.ceil(len(input_label)*THREADHOLD)
     for idx, labels in enumerate(matching_labels):
         if len(labels) >= round_threadhold:
             return 1/(idx+1)

@@ -1,0 +1,12 @@
+Measurements,Values
+file_name,im619.jpg
+k,4000
+Input labels,clouds; people; plant_life; sky; structures; tree
+Processing time (secs),3.078
+Searching time (secs),0.349
+Correct images,2526
+Correct images in DB,7152
+Precision@K,0.631
+Recall@K,0.353
+Reciprocal Rank (RR),1.0
+Average Precision@K (AP@K),0.739
