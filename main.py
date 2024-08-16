@@ -117,6 +117,8 @@ def get_matching(imgs_list, input_labels):
 def count_correct(img_result, input_label):
     correct_label_img = 0
     matching_labels = get_matching(img_result, input_label)
+    if len(matching_labels) == 0:
+        return 0
     for match_list in matching_labels:
         correct_label_img += 1
         for label in input_label:
@@ -132,6 +134,8 @@ def count_correct_in_db(input_label):
     PO_COL = 1
     RE_COL = 3
     print("Input label: ", input_label)
+    if len(input_label) == 0:
+        return 0
     with open(ANNOTATIONS, 'r') as f:
         reader = csv.reader(f, delimiter=',')
         for row in reader:
@@ -307,8 +311,8 @@ def main():
     if uploaded_file:
         searching_grid = st.sidebar.columns(2)
         btn_searching = searching_grid[0].button("Search")
-        searching_grid[1].button(
-            "Reload model", on_click=reload_model_and_index)
+        #searching_grid[1].button(
+        #    "Reload model", on_click=reload_model_and_index)
         st.sidebar.image(img, channels="BGR",
                          caption='Uploaded Image.', use_column_width=True)
 
