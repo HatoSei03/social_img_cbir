@@ -166,8 +166,9 @@ def count_correct_in_db(input_label):
 @st.cache_data(show_spinner=False)
 def calc_rr(img_result, input_label):
     matching_labels = get_matching(img_result, input_label)
+    round_threadhold = np.ceil(len(input_label)*THREADHOLD)
     for idx, labels in enumerate(matching_labels):
-        if len(labels) == len(input_label):
+        if len(labels) >= round_threadhold:
             return 1/(idx+1)
     return 0
 
@@ -177,8 +178,9 @@ def calc_apk(img_result, input_label):
     pk_values = []
     correct_counter = 0
     matching_labels = get_matching(img_result, input_label)
+    round_threadhold = np.ceil(len(input_label)*THREADHOLD)
     for idx, labels in enumerate(matching_labels):
-        if len(labels) == len(input_label):
+        if len(labels) >= round_threadhold:
             correct_counter += 1
             pk_values.append(correct_counter/(idx+1))
     if len(pk_values) == 0:
