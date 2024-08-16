@@ -1,0 +1,11 @@
+Measurements,Values
+k,10000
+Input labels,animals; indoor
+Processing time (secs),3.242
+Searching time (secs),0.694
+Correct images,4929
+Correct images in DB,10555
+Precision@K,0.493
+Recall@K,0.467
+Reciprocal Rank (RR),1.0
+Average Precision@K (AP@K),0.195

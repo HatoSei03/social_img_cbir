@@ -1,0 +1,11 @@
+Measurements,Values
+k,500
+Input labels,clouds; sea; sky; transport; water
+Processing time (secs),3.212
+Searching time (secs),0.049
+Correct images,97
+Correct images in DB,2234
+Precision@K,0.194
+Recall@K,0.043
+Reciprocal Rank (RR),1.0
+Average Precision@K (AP@K),0.369

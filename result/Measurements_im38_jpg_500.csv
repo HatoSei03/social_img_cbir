@@ -1,0 +1,11 @@
+Measurements,Values
+k,500
+Input labels,clouds; lake; sky; water
+Processing time (secs),3.043
+Searching time (secs),0.152
+Correct images,382
+Correct images in DB,4779
+Precision@K,0.764
+Recall@K,0.08
+Reciprocal Rank (RR),1.0
+Average Precision@K (AP@K),0.252
