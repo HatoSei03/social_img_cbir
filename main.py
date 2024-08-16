@@ -97,7 +97,7 @@ def suggestion_label(imgs_list):
         result.extend(po)
         result.extend(re)
     result = list(set(result))
-    result.remove("")
+    result = [label for label in result if label != '']
     return sorted(result)
 
 
@@ -286,6 +286,7 @@ def display_similar_images(similar_images, input_label, img_folder, row_size, ma
             grid = st.columns(row_size)
 
 def reload_model_and_index():
+    st.cache_data. clear()
     load_data.clear()
     load_data_and_create_model.clear()
     load_data_and_create_model()
