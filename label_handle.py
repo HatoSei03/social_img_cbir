@@ -58,7 +58,7 @@ def load_annotation(id, fpath):
             relevant[i], "", background=relevant_color[i], color="#000000")
         re_ano.append(annou)
     
-    return po_ano, re_ano
+    return po_ano, re_ano, potential, relevant
 
 def load_plain_annotation(id, fpath):
 	# jump to line id in csv

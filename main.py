@@ -65,14 +65,23 @@ def load_data():
 @st.cache_data
 def convert_result_to_csv(imgs_name, input_labels):
     isDemo = st.session_state.isDemo
-    result = '"rank","index","po_annotation","re_annotation","match_labels"\n'
+    result = '"rank","index","po_annotation","re_annotation"'
+    if isDemo:
+        result += ',"match_annotation"\n'
+    else:
+        result += '\n'
+    matching_labels = get_matching(imgs_name, input_labels)
     for idx, img in enumerate(imgs_name, start=1):
         img_id = get_digits(img)
         po, re = load_plain_annotation(
             img_id, ANNOTATIONS)
-        match_labels = "; ".join(
-            [label for label in input_labels if label in re]) if isDemo else ""
-        result += f"{idx},\"{img}\",\"{'; '.join(po)}\",\"{'; '.join(re)}\",\"{match_labels}\"\n"
+        po = "; ".join(po)
+        re = "; ".join(re)
+        match_labels = "; ".join(matching_labels[idx-1])
+        if isDemo:
+            result += f"{idx},\"{img}\",\"{po}\",\"{re}\",\"{match_labels}\"\n"
+        else:
+            result += f"{idx},\"{img}\",\"{po}\",\"{re}\",\"\"\n"
     return result
 
 
@@ -81,26 +90,35 @@ def suggestion_label(imgs_list):
     result = []
     for img in imgs_list:
         img_id = get_digits(img)
-        re = load_plain_annotation(
-            img_id, ANNOTATIONS)[1]
-        for label in re:
-            if label == "":
-                continue
-            if label not in result:
-                result.append(label)
+        po, re = load_plain_annotation(
+            img_id, ANNOTATIONS)
+        result.extend(po)
+        result.extend(re)
+    result = list(set(result))
+    result.remove("")
     return sorted(result)
 
 
 @st.cache_data(show_spinner=False)
+def get_matching(imgs_list, input_labels):
+    result = []
+    for img in imgs_list:
+        img_id = get_digits(img)
+        po, re = load_plain_annotation(
+            img_id, ANNOTATIONS)
+        po = list(set(po+re))
+        match_labels = [label for label in input_labels if label in po and label != '']
+        result.append(match_labels)
+    return result
+
+@st.cache_data(show_spinner=False)
 def count_correct(img_result, input_label):
     correct_label_img = 0
-    for img in img_result:
-        img_id = get_digits(img)
-        re = load_plain_annotation(
-            img_id, ANNOTATIONS)[1]
+    matching_labels = get_matching(img_result, input_label)
+    for match_list in matching_labels:
         correct_label_img += 1
         for label in input_label:
-            if label not in re:
+            if label not in match_list:
                 correct_label_img -= 1
                 break
     return correct_label_img
@@ -109,31 +127,26 @@ def count_correct(img_result, input_label):
 @st.cache_data(show_spinner=False)
 def count_correct_in_db(input_label):
     correct_label_img = 0
+    PO_COL = 1
     RE_COL = 3
+    print("Input label: ", input_label)
     with open(ANNOTATIONS, 'r') as f:
         reader = csv.reader(f, delimiter=',')
         for row in reader:
-            re_labels = row[RE_COL].split(';')
-            correct_label_img += 1
-            for label in input_label:
-                if label not in re_labels:
-                    correct_label_img -= 1
-                    break
+            po = row[PO_COL].split(';')
+            re = row[RE_COL].split(';')
+            #print(f"file: {row[0]}, po: {po}, re: {re}")
+            po = list(set(po+re)) 
+            match_labels = [label for label in input_label if label in po]
+            correct_label_img += len(match_labels) == len(input_label)
     return correct_label_img
 
 
 @st.cache_data(show_spinner=False)
 def calc_rr(img_result, input_label):
-    for idx, img in enumerate(img_result):
-        img_id = get_digits(img)
-        re = load_plain_annotation(
-            img_id, ANNOTATIONS)[1]
-        is_correct = True
-        for label in input_label:
-            if label not in re:
-                is_correct = False
-                break
-        if is_correct:
+    matching_labels = get_matching(img_result, input_label)
+    for idx, labels in enumerate(matching_labels):
+        if len(labels) == len(input_label):
             return 1/(idx+1)
     return 0
 
@@ -141,22 +154,15 @@ def calc_rr(img_result, input_label):
 @st.cache_data(show_spinner=False)
 def calc_apk(img_result, input_label):
     pk_values = []
-    k = len(img_result)
     correct_counter = 0
-
-    for i in range(1, k+1, 5):
-        img_id = get_digits(img_result[i-1])
-        re = load_plain_annotation(
-            img_id, ANNOTATIONS)[1]
-        is_correct = True
-        for label in input_label:
-            if label not in re:
-                is_correct = False
-                break
-        if is_correct:
+    matching_labels = get_matching(img_result, input_label)
+    for idx, labels in enumerate(matching_labels):
+        if len(labels) == len(input_label):
             correct_counter += 1
-            pk_values.append(correct_counter/i)
-    return np.mean(pk_values) if len(pk_values) > 0 else 0
+            pk_values.append(correct_counter/(idx+1))
+    if len(pk_values) == 0:
+        return 0
+    return np.mean(pk_values)
 
 
 def createModel():
@@ -203,8 +209,6 @@ def download_and_prepare_data():
     st.success("Finished getting data!")
 
 # get only digits from string
-
-
 def get_digits(text):
     return int(''.join(filter(str.isdigit, text)))
 
@@ -213,23 +217,18 @@ def display_similar_images(similar_images, input_label, img_folder, row_size, ma
     grid = st.columns(row_size)
     start_idx = (page_indx - 1) * max_ppage + 1
     end_idx = min(page_indx * max_ppage, len(similar_images))
+    matching_labels = get_matching(similar_images, input_label)
     for idx, image_name in enumerate(similar_images, start=1):
         if idx < start_idx or idx > end_idx:
             continue
         with grid[(idx-start_idx) % row_size]:
             image_path = os.path.join(img_folder, image_name)
             img_id = get_digits(image_name)
-            po_annotation, re_annotation = load_annotation(img_id, ANNOTATIONS)
+            po_annotation, re_annotation, po, re = load_annotation(img_id, ANNOTATIONS)
             similar_img = cv.imread(image_path)
             caption = f'Image {idx}: {image_name}'
             st.image(similar_img, channels="BGR",
                      caption=caption, use_column_width=True)
-
-            re_label = load_plain_annotation(img_id, ANNOTATIONS)[1]
-            match_labels_idx = [idx for idx, label in enumerate(
-                re_label) if label in input_label]
-            match_annotations = [re_annotation[idx]
-                                 for idx in match_labels_idx]
             annotated_text(
                 [
                     f"{len(po_annotation)} potential: ",
@@ -244,16 +243,25 @@ def display_similar_images(similar_images, input_label, img_folder, row_size, ma
             )
             isDemo = st.session_state.isDemo
             if isDemo:
+                match_annotations = []
+                for label in matching_labels[idx-1]:
+                    if label in po:
+                        match_annotations.append(po_annotation[po.index(label)])
+                    elif label in re:
+                        match_annotations.append(re_annotation[re.index(label)])
                 annotated_text(
                     [
                         f"{len(match_annotations)} match: ",
                         match_annotations
                     ]
                 )
-
         if (idx-start_idx+1) % row_size == 0:
             grid = st.columns(row_size)
 
+def reload_model_and_index():
+    load_data.clear()
+    load_data_and_create_model.clear()
+    load_data_and_create_model()
 
 def main():
     setup_environment()
@@ -288,7 +296,9 @@ def main():
         "Number of top K results", min_value=1, max_value=25000, value=1000)
 
     if uploaded_file:
-        btn_searching = st.sidebar.button("Search")
+        searching_grid = st.sidebar.columns(2)
+        btn_searching = searching_grid[0].button("Search")
+        searching_grid[1].button("Reload model", on_click=reload_model_and_index)
         st.sidebar.image(img, channels="BGR",
                          caption='Uploaded Image.', use_column_width=True)
 
@@ -332,8 +342,7 @@ def main():
         if isDemo:
             input_labels = st_tags(
                 label='Enter labels for input image:',
-                text='Press enter to add more',
-                value=suggestion_label(data),
+                text='Press enter to add the labels of the query image',
                 suggestions=suggestion_label(data),
                 maxtags=-1,
                 key="input_labels"
@@ -356,20 +365,20 @@ def main():
             label_visibility="collapsed",
             format_func=lambda x: "Page " + str(x)
         )
-        correct_img = count_correct(data, input_labels)
-        correct_db = count_correct_in_db(input_labels)
 
         process_time = round(st.session_state.processing_time, 3)
         search_time = round(st.session_state.run_time, 3)
-        precision = round(correct_img/len(data), 3) if len(data) > 0 else 0
-        recall = round(correct_img/correct_db, 3) if correct_db > 0 else 0
-        rr = round(calc_rr(data, input_labels), 3)
-        apk = round(calc_apk(data, input_labels), 3) if isDemo else -1
 
         if isDemo:
+            correct_img = count_correct(data, input_labels)
+            correct_db = count_correct_in_db(input_labels)
+            precision = round(correct_img/len(data), 3) if len(data) > 0 else 0
+            recall = round(correct_img/correct_db, 3) if correct_db > 0 else 0
+            rr = round(calc_rr(data, input_labels), 3)
+            apk = round(calc_apk(data, input_labels), 3) if isDemo else -1
             measurements = pd.DataFrame(
                 [
-                    ["k", top_k],
+                    ["k", str(round(top_k))],
                     ["Input labels", "; ".join(input_labels)],
                     ["Processing time (secs)",  process_time],
                     ["Searching time (secs)",  search_time],
@@ -384,12 +393,13 @@ def main():
         else:
             measurements = pd.DataFrame(
                 [
-                    ["k", top_k],
+                    ["k", str(round(top_k))],
                     ["Processing time (secs)",  process_time],
                     ["Searching time (secs)",  search_time],
                 ],
                 columns=["Measurements", "Values"]
             )
+        measurements.style.format(precision=3)
         measurements.set_index("Measurements", inplace=True)
         measurements.round(4)
         st.sidebar.table(measurements)
