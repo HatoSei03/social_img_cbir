@@ -23,18 +23,17 @@ def define_model():
     base_model = InceptionResNetV2(
         weights='imagenet', include_top=False, input_shape=(500, 500, 3))
 
+    # Add new layers for feature extraction
+    x = base_model.output
+    x = GlobalAveragePooling2D()(x)
+    x = Dense(1024, activation='relu')(x)
+    x = Dropout(0.5)(x)
     # Freeze pre-trained layers
     for layer in base_model.layers:
         try:
             layer.trainable = False
         except:
             pass
-
-    # Add new layers for feature extraction
-    x = base_model.output
-    x = GlobalAveragePooling2D()(x)
-    x = Dense(1024, activation='relu')(x)
-    x = Dropout(0.5)(x)
     model = Model(inputs=base_model.input, outputs=x)
     return model
 
