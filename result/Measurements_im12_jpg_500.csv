@@ -1,0 +1,11 @@
+Measurements,Values
+k,500
+Input labels,female; indoor; people; portrait
+Processing time (secs),3.54
+Searching time (secs),0.048
+Correct images,482
+Correct images in DB,8574
+Precision@K,0.964
+Recall@K,0.056
+Reciprocal Rank (RR),1.0
+Average Precision@K (AP@K),0.53
