@@ -324,7 +324,7 @@ def main():
         img = []
 
     top_k = st.sidebar.number_input(
-        "Number of top K results", min_value=1, max_value=25000, value=1000)
+        "Number of top K results", min_value=1, max_value=25000, value=10)
 
     if uploaded_file:
         searching_grid = st.sidebar.columns(2)
@@ -384,13 +384,13 @@ def main():
         else:
             input_labels = []
         # remove duplicate labels
-        input_labels = list(set(input_labels))
+        input_labels = sorted(list(set(input_labels)))
 
         csv_data = convert_result_to_csv(data, input_labels)
         button_grid[0].download_button(
             label="Download result as CSV",
             data=csv_data,
-            file_name=f"Result_{uploaded_file.name.replace('.','_')}.csv",
+            file_name=f"Result_{uploaded_file.name.replace('.','_')}_{str(round(top_k))}.csv",
             mime="text/csv",
         )
 
@@ -441,7 +441,7 @@ def main():
         st.sidebar.download_button(
             label="Save measurements as CSV",
             data=measurements.to_csv().encode("utf-8"),
-            file_name=f"Measurements_{uploaded_file.name.replace('.','_')}.csv",
+            file_name=f"Measurements_{uploaded_file.name.replace('.','_')}_{str(round(top_k))}.csv",
             mime="text/csv",
         )
         with st.spinner("Loading image..."):
