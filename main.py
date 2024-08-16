@@ -330,10 +330,6 @@ def main():
         "Number of top K results", min_value=1, max_value=25000, value=10)
 
     if uploaded_file:
-        if "img_name" in st.session_state and "input_labels" in st.session_state:
-            if uploaded_file.name != st.session_state.img_name:
-                st.session_state.similar_images.clear()
-                
         st.session_state.img_name = uploaded_file.name
         searching_grid = st.sidebar.columns(2)
         btn_searching = searching_grid[0].button("Search")
@@ -407,12 +403,13 @@ def main():
         st.session_state.input_labels.extend(input_labels)
 
         csv_data = convert_result_to_csv(data, input_labels)
-        button_grid[0].download_button(
-            label="Download result as CSV",
-            data=csv_data,
-            file_name=f"Result_{uploaded_file.name.replace('.','_')}_{str(round(top_k))}.csv",
-            mime="text/csv",
-        )
+        if uploaded_file:
+            button_grid[0].download_button(
+                label="Download result as CSV",
+                data=csv_data,
+                file_name=f"Result_{uploaded_file.name.replace('.','_')}_{str(round(top_k))}.csv",
+                mime="text/csv",
+            )
 
         page_idx = button_grid[2].selectbox(
             "Page",
@@ -433,6 +430,7 @@ def main():
             apk = round(calc_apk(data, input_labels), 3) if isDemo else -1
             measurements = pd.DataFrame(
                 [
+                    ["file_name", uploaded_file.name],
                     ["k", str(round(top_k))],
                     ["Input labels", "; ".join(input_labels)],
                     ["Processing time (secs)",  process_time],
@@ -448,6 +446,7 @@ def main():
         else:
             measurements = pd.DataFrame(
                 [
+                    ["file_name", uploaded_file.name],
                     ["k", str(round(top_k))],
                     ["Processing time (secs)",  process_time],
                     ["Searching time (secs)",  search_time],
@@ -458,12 +457,13 @@ def main():
         measurements.set_index("Measurements", inplace=True)
         measurements.round(4)
         st.sidebar.table(measurements)
-        st.sidebar.download_button(
-            label="Save measurements as CSV",
-            data=measurements.to_csv().encode("utf-8"),
-            file_name=f"Measurements_{uploaded_file.name.replace('.','_')}_{str(round(top_k))}.csv",
-            mime="text/csv",
-        )
+        if uploaded_file:
+            st.sidebar.download_button(
+                label="Save measurements as CSV",
+                data=measurements.to_csv().encode("utf-8"),
+                file_name=f"Measurements_{uploaded_file.name.replace('.','_')}_{str(round(top_k))}.csv",
+                mime="text/csv",
+            )
         with st.spinner("Loading image..."):
             display_similar_images(
                 data, input_labels, IMG_FOLDER, row_size, max_ppage, page_idx)
